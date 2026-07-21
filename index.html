@@ -459,6 +459,10 @@ table.rent-table td.winner{color:var(--gold2);}
             <div class="bm-seg-item" data-cdi="above">Acima de 100% do CDI</div>
             <div class="bm-seg-item" data-cdi="below">Abaixo de 100% do CDI</div>
         </div>
+        <span class="period-filter-label">Período</span>
+        <div class="bm-segment" id="cdiPeriodControls">
+            <div class="bm-seg-item active" data-cdi-period="">Todo o histórico</div>
+        </div>
     </div>
     <div class="clients-table-wrap">
         <div class="clients-table-head">
@@ -555,6 +559,7 @@ let pendingRentabilidade = null;   // registros parseados do excel mensal, aguar
 let currentClient = null;
 let currentFilter = '';
 let activeCdiFilter = null;        // null = todos; 'above' = acima de 100% do CDI; 'below' = abaixo de 100% do CDI
+let activeCdiPeriodFilter = null;  // null = todo o histórico do cliente; senão string "YYYY" -> restringe o cálculo % do CDI a esse ano
 let activeBenchmarks = new Set();  // quais benchmarks estão marcados no gráfico
 let activeYearFilter = null;       // null = todos os anos; senão string "YYYY"
 let chartInstance = null;
@@ -610,15 +615,17 @@ function renderBaseStatus() {
         nCadastro ? `${nCadastro} clientes cadastrados` : 'Nenhum cadastro carregado');
 }
 
-// ====================== % DO CDI POR CLIENTE (histórico completo) ======================
-// Calcula, usando TODO o histórico do cliente (independente do filtro de ano ativo na tela):
-// - rentabilidade acumulada (juros compostos de todos os meses)
+// ====================== % DO CDI POR CLIENTE (histórico completo ou por período) ======================
+// Calcula, usando o histórico do cliente (ou apenas o ano informado em `year`, se houver):
+// - rentabilidade acumulada (juros compostos dos meses considerados)
 // - CDI acumulado (juros compostos do CDI nos meses em que há CDI informado)
 // - % do CDI = (rentabilidade acumulada / CDI acumulado) * 100
-// Retorna null se o cliente não tiver nenhum registro de rentabilidade.
+// `year` (opcional): string "YYYY" -> restringe os registros àquele ano, em vez do histórico completo.
+// Retorna null se o cliente não tiver nenhum registro de rentabilidade no período considerado.
 // pctCdi vem null se não houver CDI acumulado válido (sem dados de CDI, ou CDI acumulado = 0).
-function clientCdiStats(code) {
-    const recs = rentabilidadeData.filter(r => r.cliente === code).sort((a, b) => a.mes.localeCompare(b.mes));
+function clientCdiStats(code, year) {
+    let recs = rentabilidadeData.filter(r => r.cliente === code).sort((a, b) => a.mes.localeCompare(b.mes));
+    if (year) recs = recs.filter(r => r.mes.startsWith(year));
     if (!recs.length) return null;
 
     const rentAcum = recs.reduce((acc, r) => acc * (1 + r.rentabilidade), 1) - 1;
@@ -644,7 +651,7 @@ function clientCdiStats(code) {
 // CDI acumulado válido -> fora dos dois filtros.
 function passesCdiFilter(code) {
     if (!activeCdiFilter) return true;
-    const stats = clientCdiStats(code);
+    const stats = clientCdiStats(code, activeCdiPeriodFilter);
     if (!stats || stats.pctCdi === null || isNaN(stats.pctCdi)) return false;
     if (activeCdiFilter === 'above') return stats.pctCdi > 100;
     if (activeCdiFilter === 'below') return stats.pctCdi < 100;
@@ -948,7 +955,30 @@ function clientMeta(code) {
     return { nMeses, ultima };
 }
 
+// Reconstrói as opções de ano do seletor "Período" do filtro de CDI, de acordo
+// com os anos presentes em rentabilidadeData. Preserva a seleção ativa quando
+// o ano continua disponível; caso contrário volta para "Todo o histórico".
+function renderCdiPeriodFilter() {
+    const wrap = document.getElementById('cdiPeriodControls');
+    if (!wrap) return;
+    const years = [...new Set(rentabilidadeData.map(r => r.mes.slice(0, 4)))].sort();
+    if (activeCdiPeriodFilter && !years.includes(activeCdiPeriodFilter)) activeCdiPeriodFilter = null;
+
+    wrap.innerHTML = `<div class="bm-seg-item${!activeCdiPeriodFilter ? ' active' : ''}" data-cdi-period="">Todo o histórico</div>` +
+        years.map(y => `<div class="bm-seg-item${activeCdiPeriodFilter === y ? ' active' : ''}" data-cdi-period="${y}">${y}</div>`).join('');
+
+    wrap.querySelectorAll('.bm-seg-item').forEach(item => {
+        item.addEventListener('click', () => {
+            activeCdiPeriodFilter = item.dataset.cdiPeriod || null;
+            wrap.querySelectorAll('.bm-seg-item').forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+            renderClientsList();
+        });
+    });
+}
+
 function renderClientsList() {
+    renderCdiPeriodFilter();
     const grid = document.getElementById('clientsGrid');
     const footer = document.getElementById('clientsFooter');
     const stats = document.getElementById('clientsStats');
@@ -1044,12 +1074,14 @@ document.getElementById('btnExportarExcel').addEventListener('click', () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Rentabilidade');
 
-    // ---- Abas extras: clientes acima/abaixo de 100% do CDI (histórico completo do cliente) ----
+    // ---- Abas extras: clientes acima/abaixo de 100% do CDI ----
+    // Respeita o filtro de período ativo na tela: se um ano estiver selecionado,
+    // o cálculo do % do CDI considera apenas aquele ano; senão usa o histórico completo.
     const allCodes = [...new Set(rentabilidadeData.map(r => r.cliente))];
     const acimaRows = [];
     const abaixoRows = [];
     allCodes.forEach(code => {
-        const stats = clientCdiStats(code);
+        const stats = clientCdiStats(code, activeCdiPeriodFilter);
         if (!stats || stats.pctCdi === null || isNaN(stats.pctCdi)) return;
         const row = {
             'Código': code,
@@ -1068,15 +1100,16 @@ document.getElementById('btnExportarExcel').addEventListener('click', () => {
     abaixoRows.sort((a, b) => a['% do CDI'] - b['% do CDI']);
 
     const extraCols = [{ wch: 12 }, { wch: 28 }, { wch: 16 }, { wch: 24 }, { wch: 22 }, { wch: 18 }, { wch: 12 }];
+    const periodoSuffix = activeCdiPeriodFilter ? ` ${activeCdiPeriodFilter}` : '';
     if (acimaRows.length) {
         const wsAcima = XLSX.utils.json_to_sheet(acimaRows);
         wsAcima['!cols'] = extraCols;
-        XLSX.utils.book_append_sheet(wb, wsAcima, 'Acima 100% CDI');
+        XLSX.utils.book_append_sheet(wb, wsAcima, `Acima 100% CDI${periodoSuffix}`);
     }
     if (abaixoRows.length) {
         const wsAbaixo = XLSX.utils.json_to_sheet(abaixoRows);
         wsAbaixo['!cols'] = extraCols;
-        XLSX.utils.book_append_sheet(wb, wsAbaixo, 'Abaixo 100% CDI');
+        XLSX.utils.book_append_sheet(wb, wsAbaixo, `Abaixo 100% CDI${periodoSuffix}`);
     }
 
     const now = new Date();
