@@ -452,6 +452,14 @@ table.rent-table td.winner{color:var(--gold2);}
             <span class="clients-stats" id="clientsStats"></span>
         </div>
     </div>
+    <div class="clients-toolbar" id="cdiFilterRow">
+        <span class="period-filter-label">Desempenho vs CDI</span>
+        <div class="bm-segment" id="cdiFilterControls">
+            <div class="bm-seg-item active" data-cdi="">Todos</div>
+            <div class="bm-seg-item" data-cdi="above">Acima de 100% do CDI</div>
+            <div class="bm-seg-item" data-cdi="below">Abaixo de 100% do CDI</div>
+        </div>
+    </div>
     <div class="clients-table-wrap">
         <div class="clients-table-head">
             <span>Cliente</span>
@@ -546,6 +554,7 @@ try { rentabilidadeData = JSON.parse(RENTABILIDADE_JSON) || []; } catch(e) { ren
 let pendingRentabilidade = null;   // registros parseados do excel mensal, aguardando confirmação
 let currentClient = null;
 let currentFilter = '';
+let activeCdiFilter = null;        // null = todos; 'above' = acima de 100% do CDI; 'below' = abaixo de 100% do CDI
 let activeBenchmarks = new Set();  // quais benchmarks estão marcados no gráfico
 let activeYearFilter = null;       // null = todos os anos; senão string "YYYY"
 let chartInstance = null;
@@ -599,6 +608,47 @@ function renderBaseStatus() {
         nRegistros ? `${nClientesRent} clientes · ${nRegistros} registros` : 'Nenhum dado carregado');
     setStatus('stCadastro', nCadastro ? 'ok' : 'idle',
         nCadastro ? `${nCadastro} clientes cadastrados` : 'Nenhum cadastro carregado');
+}
+
+// ====================== % DO CDI POR CLIENTE (histórico completo) ======================
+// Calcula, usando TODO o histórico do cliente (independente do filtro de ano ativo na tela):
+// - rentabilidade acumulada (juros compostos de todos os meses)
+// - CDI acumulado (juros compostos do CDI nos meses em que há CDI informado)
+// - % do CDI = (rentabilidade acumulada / CDI acumulado) * 100
+// Retorna null se o cliente não tiver nenhum registro de rentabilidade.
+// pctCdi vem null se não houver CDI acumulado válido (sem dados de CDI, ou CDI acumulado = 0).
+function clientCdiStats(code) {
+    const recs = rentabilidadeData.filter(r => r.cliente === code).sort((a, b) => a.mes.localeCompare(b.mes));
+    if (!recs.length) return null;
+
+    const rentAcum = recs.reduce((acc, r) => acc * (1 + r.rentabilidade), 1) - 1;
+
+    const cdiRecs = recs.filter(r => r.cdi !== null && r.cdi !== undefined && !isNaN(r.cdi));
+    let cdiAcum = null, pctCdi = null;
+    if (cdiRecs.length) {
+        cdiAcum = cdiRecs.reduce((acc, r) => acc * (1 + r.cdi), 1) - 1;
+        if (cdiAcum !== 0) pctCdi = (rentAcum / cdiAcum) * 100;
+    }
+
+    return {
+        nMeses: recs.length,
+        primeiroMes: recs[0].mes,
+        ultimoMes: recs[recs.length - 1].mes,
+        rentAcum,
+        cdiAcum,
+        pctCdi
+    };
+}
+
+// Regra de classificação: > 100% -> "acima"; < 100% -> "abaixo"; exatamente 100,00% ou sem
+// CDI acumulado válido -> fora dos dois filtros.
+function passesCdiFilter(code) {
+    if (!activeCdiFilter) return true;
+    const stats = clientCdiStats(code);
+    if (!stats || stats.pctCdi === null || isNaN(stats.pctCdi)) return false;
+    if (activeCdiFilter === 'above') return stats.pctCdi > 100;
+    if (activeCdiFilter === 'below') return stats.pctCdi < 100;
+    return true;
 }
 
 // ====================== LEITURA DE EXCEL ======================
@@ -905,9 +955,12 @@ function renderClientsList() {
     const all = getClientCodes();
 
     let filtered = all.filter(code => {
-        if (!currentFilter) return true;
-        const nome = (clientNames[code] || '').toLowerCase();
-        return code.toLowerCase().includes(currentFilter.toLowerCase()) || nome.includes(currentFilter.toLowerCase());
+        if (currentFilter) {
+            const nome = (clientNames[code] || '').toLowerCase();
+            const bate = code.toLowerCase().includes(currentFilter.toLowerCase()) || nome.includes(currentFilter.toLowerCase());
+            if (!bate) return false;
+        }
+        return passesCdiFilter(code);
     });
 
     filtered.sort((a, b) => clientLabel(a).localeCompare(clientLabel(b), 'pt-BR'));
@@ -951,6 +1004,16 @@ document.getElementById('btnLimparBusca').addEventListener('click', () => {
     document.getElementById('resultSection').innerHTML = '';
 });
 
+// ====================== FILTRO % DO CDI (lista de clientes) ======================
+document.getElementById('cdiFilterControls').querySelectorAll('.bm-seg-item').forEach(item => {
+    item.addEventListener('click', () => {
+        activeCdiFilter = item.dataset.cdi || null;
+        document.querySelectorAll('#cdiFilterControls .bm-seg-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        renderClientsList();
+    });
+});
+
 // ====================== EXPORTAÇÃO EXCEL ======================
 document.getElementById('btnExportarExcel').addEventListener('click', () => {
     if (window._xlsxFailed || typeof XLSX === 'undefined') {
@@ -980,6 +1043,41 @@ document.getElementById('btnExportarExcel').addEventListener('click', () => {
     ws['!cols'] = [{ wch: 12 }, { wch: 28 }, { wch: 10 }, { wch: 16 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 10 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Rentabilidade');
+
+    // ---- Abas extras: clientes acima/abaixo de 100% do CDI (histórico completo do cliente) ----
+    const allCodes = [...new Set(rentabilidadeData.map(r => r.cliente))];
+    const acimaRows = [];
+    const abaixoRows = [];
+    allCodes.forEach(code => {
+        const stats = clientCdiStats(code);
+        if (!stats || stats.pctCdi === null || isNaN(stats.pctCdi)) return;
+        const row = {
+            'Código': code,
+            'Nome': clientLabel(code) !== code ? clientLabel(code) : '',
+            'Meses computados': stats.nMeses,
+            'Período': `${fmtMes(stats.primeiroMes)} — ${fmtMes(stats.ultimoMes)}`,
+            'Rentabilidade Acumulada (%)': +(stats.rentAcum * 100).toFixed(4),
+            'CDI Acumulado (%)': +(stats.cdiAcum * 100).toFixed(4),
+            '% do CDI': +stats.pctCdi.toFixed(2)
+        };
+        if (stats.pctCdi > 100) acimaRows.push(row);
+        else if (stats.pctCdi < 100) abaixoRows.push(row);
+        // exatamente 100,00% fica de fora das duas abas
+    });
+    acimaRows.sort((a, b) => b['% do CDI'] - a['% do CDI']);
+    abaixoRows.sort((a, b) => a['% do CDI'] - b['% do CDI']);
+
+    const extraCols = [{ wch: 12 }, { wch: 28 }, { wch: 16 }, { wch: 24 }, { wch: 22 }, { wch: 18 }, { wch: 12 }];
+    if (acimaRows.length) {
+        const wsAcima = XLSX.utils.json_to_sheet(acimaRows);
+        wsAcima['!cols'] = extraCols;
+        XLSX.utils.book_append_sheet(wb, wsAcima, 'Acima 100% CDI');
+    }
+    if (abaixoRows.length) {
+        const wsAbaixo = XLSX.utils.json_to_sheet(abaixoRows);
+        wsAbaixo['!cols'] = extraCols;
+        XLSX.utils.book_append_sheet(wb, wsAbaixo, 'Abaixo 100% CDI');
+    }
 
     const now = new Date();
     const stamp = now.toISOString().slice(0, 10);
