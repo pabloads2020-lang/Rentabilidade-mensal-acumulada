@@ -361,6 +361,7 @@ table.rent-table td.winner{color:var(--gold2);}
 .file-preview-row{display:flex;justify-content:space-between;color:var(--tx2);padding:3px 0;font-family:'DM Mono',monospace;font-size:var(--fs-2xs);}
 .file-preview-row span:first-child{font-family:inherit;color:var(--tx3);}
 .file-preview-warn{display:flex;align-items:center;gap:5px;color:#e0a62c;font-size:var(--fs-2xs);margin-top:9px;padding-top:9px;border-top:1px solid var(--bd);}
+.file-preview-ready{text-align:center;background:var(--pos-soft);color:var(--pos);font-weight:700;font-size:var(--fs-2xs);border-radius:var(--r-sm);padding:7px;margin-top:9px;}
 .st-bar{margin-bottom:0;}
 @media(max-width:520px){.modal-box{padding:var(--sp-5);}.modal-actions{flex-direction:column;}}
 </style>
@@ -515,7 +516,6 @@ table.rent-table td.winner{color:var(--gold2);}
         <div class="upload-split">
             <div class="modal-dropzone" id="dzRentModal">
                 <input type="file" id="fileRentModal" accept=".xlsx,.xls" style="display:none">
-                <div class="dz-icon">⬆</div>
                 <div class="dz-text"><strong>Clique ou arraste</strong><br>arquivo .xlsx</div>
             </div>
             <div class="file-preview" id="filePreviewRent">
@@ -600,6 +600,8 @@ function clientLabel(code) {
 function setStatus(id, type, msg) {
     const el = document.getElementById(id);
     if (!el) return;
+    if (!msg) { el.style.display = 'none'; return; }
+    el.style.display = '';
     el.className = 'st ' + type;
     el.textContent = msg;
 }
@@ -774,17 +776,17 @@ function parseRentabilidadeExcel(file) {
         }
         pendingRentabilidade = records;
         const nClientes = new Set(records.map(r => r.cliente)).size;
-        setStatus('stRentModal', 'ok', `✓ Pronto para carregar`);
+        setStatus('stRentModal', 'idle', '');
         document.getElementById('dzRentModal').classList.add('ok');
         document.getElementById('modalBaseSalvar').disabled = false;
 
         document.getElementById('filePreviewRent').innerHTML = `
-            <div class="file-preview-name">📄 ${esc(file.name)}</div>
+            <div class="file-preview-name">${esc(file.name)}</div>
             <div class="file-preview-row"><span>Abas lidas</span><span>${abasLidas} de ${wb.SheetNames.length}</span></div>
             <div class="file-preview-row"><span>Clientes</span><span>${nClientes}</span></div>
             <div class="file-preview-row"><span>Registros de mês</span><span>${records.length}</span></div>
             ${abasIgnoradas.length ? `<div class="file-preview-warn">⚠️ Aba(s) sem colunas reconhecidas, ignorada(s): ${esc(abasIgnoradas.join(', '))}</div>` : ''}
-            ${ignoradosFimDeSemana ? `<div class="file-preview-warn">⚠️ ${ignoradosFimDeSemana} linha(s) de fim de semana ignoradas</div>` : ''}
+            <div class="file-preview-ready">Pronto para carregar</div>
         `;
     });
 }
