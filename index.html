@@ -289,6 +289,16 @@ body.light .st.idle{background:var(--bg-card3);color:var(--tx3);border:1px solid
 .bm-seg-item.active[data-key="ibov"]{background:rgba(46,204,113,.16) !important;color:#2ECC71 !important;border-color:#2ECC71;}
 .bm-seg-item.active[data-key="sp500"]{background:rgba(230,126,34,.16) !important;color:#E67E22 !important;border-color:#E67E22;}
 .bm-seg-item.active[data-key="ifix"]{background:rgba(26,188,156,.16) !important;color:#1ABC9C !important;border-color:#1ABC9C;}
+.select-wrap{position:relative;display:inline-flex;align-items:center;}
+.cdi-period-select{appearance:none;-webkit-appearance:none;-moz-appearance:none;background:var(--bg-card3);border:1px solid var(--bd);border-radius:999px;padding:7px 34px 7px 14px;font-size:var(--fs-xs);font-weight:600;color:var(--tx2);cursor:pointer;font-family:inherit;transition:border-color .15s,color .15s,box-shadow .15s;}
+.cdi-period-select:hover{border-color:var(--gold);color:var(--tx);}
+.cdi-period-select:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-soft);outline:none;}
+.select-arrow{position:absolute;right:9px;top:50%;transform:translateY(-50%);font-size:17px;color:var(--tx3);pointer-events:none;}
+.select-wrap:hover .select-arrow{color:var(--gold);}
+.cdi-summary-bar{display:flex;gap:var(--sp-6);flex-wrap:wrap;align-items:baseline;background:var(--bg-card);border:1px solid var(--bd);border-radius:var(--r-lg);padding:var(--sp-4) var(--sp-5);margin-bottom:var(--sp-3);box-shadow:var(--shadow-xs);}
+.cdi-summary-bar .sp{font-size:var(--fs-sm);}
+.cdi-summary-note{font-size:var(--fs-xs);color:var(--tx3);}
+.cdi-summary-empty{font-size:var(--fs-xs);color:var(--tx3);padding:2px 0;}
 .chart-canvas-box{position:relative;height:320px;}
 @media(max-width:640px){.chart-canvas-box{height:260px;}.chart-wrap,.period-filter,.rp-header,.summary{padding-left:var(--sp-4);padding-right:var(--sp-4);}}
 .chart-tooltip{position:absolute;pointer-events:none;opacity:0;transition:opacity .1s;background:var(--bg-card2);border:1px solid var(--bd2);border-left:3px solid var(--gold);border-radius:var(--r-sm);padding:11px 15px;min-width:180px;z-index:20;box-shadow:var(--shadow-lg);}
@@ -460,11 +470,15 @@ table.rent-table td.winner{color:var(--gold2);}
             <div class="bm-seg-item" data-cdi="above">Acima de 100% do CDI</div>
             <div class="bm-seg-item" data-cdi="below">Abaixo de 100% do CDI</div>
         </div>
-        <span class="period-filter-label">Período</span>
-        <div class="bm-segment" id="cdiPeriodControls">
-            <div class="bm-seg-item active" data-cdi-period="">Todo o histórico</div>
+        <span class="period-filter-label" style="margin-left:4px;">Período do filtro</span>
+        <div class="select-wrap">
+            <select class="cdi-period-select" id="cdiPeriodSelect">
+                <option value="">Todo o histórico</option>
+            </select>
+            <span class="material-symbols-outlined select-arrow">expand_more</span>
         </div>
     </div>
+    <div class="cdi-summary-bar" id="cdiSummary"></div>
     <div class="clients-table-wrap">
         <div class="clients-table-head">
             <span>Cliente</span>
@@ -957,30 +971,66 @@ function clientMeta(code) {
     return { nMeses, ultima };
 }
 
-// Reconstrói as opções de ano do seletor "Período" do filtro de CDI, de acordo
-// com os anos presentes em rentabilidadeData. Preserva a seleção ativa quando
-// o ano continua disponível; caso contrário volta para "Todo o histórico".
+// Repopula o dropdown "Período do filtro" com os anos presentes em rentabilidadeData.
+// Preserva a seleção ativa quando o ano continua disponível; caso contrário volta
+// para "Todo o histórico".
 function renderCdiPeriodFilter() {
-    const wrap = document.getElementById('cdiPeriodControls');
-    if (!wrap) return;
+    const sel = document.getElementById('cdiPeriodSelect');
+    if (!sel) return;
     const years = [...new Set(rentabilidadeData.map(r => r.mes.slice(0, 4)))].sort();
     if (activeCdiPeriodFilter && !years.includes(activeCdiPeriodFilter)) activeCdiPeriodFilter = null;
 
-    wrap.innerHTML = `<div class="bm-seg-item${!activeCdiPeriodFilter ? ' active' : ''}" data-cdi-period="">Todo o histórico</div>` +
-        years.map(y => `<div class="bm-seg-item${activeCdiPeriodFilter === y ? ' active' : ''}" data-cdi-period="${y}">${y}</div>`).join('');
+    sel.innerHTML = `<option value="">Todo o histórico</option>` +
+        years.map(y => `<option value="${y}"${activeCdiPeriodFilter === y ? ' selected' : ''}>${y}</option>`).join('');
+    sel.value = activeCdiPeriodFilter || '';
+}
 
-    wrap.querySelectorAll('.bm-seg-item').forEach(item => {
-        item.addEventListener('click', () => {
-            activeCdiPeriodFilter = item.dataset.cdiPeriod || null;
-            wrap.querySelectorAll('.bm-seg-item').forEach(i => i.classList.remove('active'));
-            item.classList.add('active');
-            renderClientsList();
-        });
+// Conta, para o período ativo (activeCdiPeriodFilter), quantos clientes ficaram
+// acima/abaixo/exatamente em 100% do CDI, entre os que têm % do CDI válido naquele
+// período. Independe do filtro Acima/Abaixo/Todos selecionado — é sempre a "foto"
+// completa do período escolhido no dropdown.
+function computeCdiSummary(period) {
+    const codes = getClientCodes();
+    let qualified = 0, acima = 0, abaixo = 0, exato = 0;
+    codes.forEach(code => {
+        const cstats = clientCdiStats(code, period);
+        if (!cstats || cstats.pctCdi === null || isNaN(cstats.pctCdi)) return;
+        qualified++;
+        if (cstats.pctCdi > 100) acima++;
+        else if (cstats.pctCdi < 100) abaixo++;
+        else exato++;
     });
+    return { qualified, acima, abaixo, exato };
+}
+
+// Renderiza a barra de resumo "N acima / N abaixo do CDI (%)" para o período ativo.
+function renderCdiSummary() {
+    const el = document.getElementById('cdiSummary');
+    if (!el) return;
+    const period = activeCdiPeriodFilter;
+    const { qualified, acima, abaixo, exato } = computeCdiSummary(period);
+    const periodoLabel = period ? `em ${period}` : 'em todo o histórico';
+
+    if (!qualified) {
+        el.innerHTML = `<div class="cdi-summary-empty">Nenhum cliente com % do CDI calculável ${periodoLabel} ainda.</div>`;
+        return;
+    }
+
+    const pctAcima = (acima / qualified * 100).toFixed(1).replace('.', ',');
+    const pctAbaixo = (abaixo / qualified * 100).toFixed(1).replace('.', ',');
+    const notaExato = exato ? ` <span class="cdi-summary-note">· ${exato} exatamente em 100% do CDI</span>` : '';
+
+    el.innerHTML = `
+        <span class="sp total"><span class="sp-d"></span>${qualified} cliente${qualified !== 1 ? 's' : ''} com % do CDI calculado ${periodoLabel}</span>
+        <span class="sp pos"><span class="sp-d"></span>${acima} acima do CDI <span class="cdi-note">(${pctAcima}%)</span></span>
+        <span class="sp neg"><span class="sp-d"></span>${abaixo} abaixo do CDI <span class="cdi-note">(${pctAbaixo}%)</span></span>
+        ${notaExato}
+    `;
 }
 
 function renderClientsList() {
     renderCdiPeriodFilter();
+    renderCdiSummary();
     const grid = document.getElementById('clientsGrid');
     const footer = document.getElementById('clientsFooter');
     const stats = document.getElementById('clientsStats');
@@ -1044,6 +1094,10 @@ document.getElementById('cdiFilterControls').querySelectorAll('.bm-seg-item').fo
         item.classList.add('active');
         renderClientsList();
     });
+});
+document.getElementById('cdiPeriodSelect').addEventListener('change', (e) => {
+    activeCdiPeriodFilter = e.target.value || null;
+    renderClientsList();
 });
 
 // ====================== EXPORTAÇÃO EXCEL ======================
