@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rentabilidade Mensal · Pleno Gestão</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@400,0&display=swap" rel="stylesheet">
 <script>
 (function(){
@@ -25,6 +25,16 @@
     'https://unpkg.com/chart.js@4.4.4/dist/chart.umd.min.js'
   ],i=0;
   function next(){if(i>=cdns.length){window._chartFailed=true;return;}
+    var s=document.createElement('script');s.src=cdns[i++];s.onerror=next;document.head.appendChild(s);}
+  next();
+})();
+(function(){
+  var cdns=[
+    'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+    'https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js'
+  ],i=0;
+  function next(){if(i>=cdns.length){window._jspdfFailed=true;return;}
     var s=document.createElement('script');s.src=cdns[i++];s.onerror=next;document.head.appendChild(s);}
   next();
 })();
@@ -203,6 +213,7 @@ body.light .st.idle{background:var(--bg-card3);color:var(--tx3);border:1px solid
 .btn-clear-base:hover{border-color:var(--neg);color:var(--neg);background:var(--neg-soft);}
 #btnExportarExcel{border-color:rgba(56,207,146,.3);color:var(--pos);background:var(--pos-soft);}
 #btnExportarExcel:hover{border-color:var(--pos);color:var(--pos);background:rgba(56,207,146,.2);}
+#btnBaixarImagemCdi:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-soft);}
 
 .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-3);margin-bottom:var(--sp-6);}
 @media(max-width:800px){.stats-row{grid-template-columns:1fr;}}
@@ -336,6 +347,14 @@ table.rent-table td.winner{color:var(--gold2);}
 .modal-overlay.hidden{display:none;}
 .modal-box{background:var(--bg-card);border:1px solid var(--bd2);border-radius:var(--r-lg);padding:var(--sp-6);width:100%;max-width:380px;box-shadow:var(--shadow-lg);}
 .modal-box.wide{max-width:580px;}
+.modal-box.scroll{max-height:82vh;overflow-y:auto;}
+.metodologia-body{font-size:var(--fs-sm);color:var(--tx2);line-height:1.65;}
+.metodologia-body h4{color:var(--tx);font-size:var(--fs-base);font-weight:700;margin:var(--sp-5) 0 6px;}
+.metodologia-body h4:first-child{margin-top:0;}
+.metodologia-body p{margin-bottom:8px;}
+.metodologia-body .formula{font-family:'DM Mono',monospace;font-size:var(--fs-xs);background:var(--bg-card3);border:1px solid var(--bd);border-radius:var(--r-sm);padding:8px 12px;color:var(--tx);}
+.metodologia-body .mt-pos{color:var(--pos);font-weight:600;}
+.metodologia-body .mt-neg{color:var(--neg);font-weight:600;}
 .modal-title{font-size:var(--fs-lg);font-weight:700;margin-bottom:6px;letter-spacing:-.01em;}
 .modal-sub{font-size:var(--fs-sm);color:var(--tx3);margin-bottom:var(--sp-5);line-height:1.6;}
 .modal-input{width:100%;background:var(--bg-card3);border:1px solid var(--bd);border-radius:var(--r-sm);padding:11px 40px 11px 14px;color:var(--tx);font-size:var(--fs-base);font-family:inherit;outline:none;transition:border-color .15s,box-shadow .15s;margin-bottom:var(--sp-3);}
@@ -477,6 +496,14 @@ table.rent-table td.winner{color:var(--gold2);}
             </select>
             <span class="material-symbols-outlined select-arrow">expand_more</span>
         </div>
+        <button class="btn-clear-base" id="btnBaixarImagemCdi" style="margin-left:4px;">
+            <span class="material-symbols-outlined">image</span>
+            Baixar imagem
+        </button>
+        <button class="btn-clear-base" id="btnMetodologiaCdi">
+            <span class="material-symbols-outlined">menu_book</span>
+            Metodologia
+        </button>
     </div>
     <div class="cdi-summary-bar" id="cdiSummary"></div>
     <div class="clients-table-wrap">
@@ -555,6 +582,47 @@ table.rent-table td.winner{color:var(--gold2);}
         <div class="modal-actions">
             <button class="modal-btn cancel" id="confirmActionCancel">Cancelar</button>
             <button class="modal-btn confirm-danger" id="confirmActionConfirm">Limpar</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay hidden" id="modalMetodologia">
+    <div class="modal-box wide scroll">
+        <div class="modal-title">Metodologia · Desempenho vs CDI</div>
+        <div class="modal-sub">Como cada número desta tela e da imagem exportada é calculado.</div>
+        <div class="metodologia-body">
+            <h4>1. Origem dos dados</h4>
+            <p>A rentabilidade e o CDI de cada mês vêm do último dia útil disponível daquele mês, na aba "Evolução Patrimonial" do Excel carregado. Esse valor já é o acumulado do mês (não somamos os dias). Linhas de sábado e domingo são ignoradas na leitura.</p>
+
+            <h4>2. Rentabilidade acumulada do cliente</h4>
+            <p>Juros compostos de todos os meses considerados no período (todo o histórico do cliente, ou só o ano escolhido no seletor "Período do filtro"):</p>
+            <p class="formula">rent. acumulada = (1 + r₁) × (1 + r₂) × ... × (1 + rₙ) − 1</p>
+
+            <h4>3. CDI acumulado do período</h4>
+            <p>Mesma lógica de juros compostos, mas usando apenas os meses em que há CDI informado para aquele cliente.</p>
+            <p class="formula">CDI acumulado = (1 + cdi₁) × (1 + cdi₂) × ... × (1 + cdiₙ) − 1</p>
+
+            <h4>4. % do CDI</h4>
+            <p class="formula">% do CDI = (rent. acumulada / CDI acumulado) × 100</p>
+            <p>Se o cliente não tiver nenhum mês com CDI informado, ou o CDI acumulado der exatamente zero, o % do CDI não é calculado (fica de fora de qualquer contagem ou média).</p>
+
+            <h4>5. Classificação acima / abaixo</h4>
+            <p><span class="mt-pos">% do CDI &gt; 100%</span> → acima do CDI &nbsp;·&nbsp; <span class="mt-neg">% do CDI &lt; 100%</span> → abaixo do CDI &nbsp;·&nbsp; exatamente 100% → não entra em nenhum dos dois grupos.</p>
+
+            <h4>6. Efeito do "Período do filtro"</h4>
+            <p>Ao escolher um ano específico, todo o cálculo acima (rentabilidade acumulada, CDI acumulado, % do CDI e a classificação) é refeito considerando só os meses daquele ano — não o histórico completo do cliente. Em "Todo o histórico", os cálculos usam todos os meses disponíveis.</p>
+
+            <h4>7. Métricas da imagem exportada</h4>
+            <p><strong>Clientes analisados</strong>: soma dos clientes com % do CDI válido em cada ano mostrado.</p>
+            <p><strong>Média acima do CDI</strong>: soma de clientes "acima" dividida pela soma de "clientes analisados" de todos os anos — uma média ponderada por cliente-ano (não a média simples dos percentuais de cada ano, que dá mais peso a anos com menos clientes).</p>
+            <p><strong>Melhor ano</strong>: o ano com a maior proporção de clientes acima do CDI naquele ano.</p>
+        </div>
+        <div class="modal-actions">
+            <button class="modal-btn cancel" id="btnFecharMetodologia" style="flex:none;padding:11px 22px;">Fechar</button>
+            <button class="modal-btn cancel" id="btnExportarMetodologiaPdf" style="flex:none;padding:11px 22px;display:flex;align-items:center;gap:6px;">
+                <span class="material-symbols-outlined" style="font-size:17px;">picture_as_pdf</span>
+                Exportar PDF
+            </button>
         </div>
     </div>
 </div>
@@ -1028,6 +1096,171 @@ function renderCdiSummary() {
     `;
 }
 
+// Gera e baixa um PNG no estilo "resumo executivo" com o desempenho vs CDI
+// por ano: cabeçalho com data/hora, 3 métricas em destaque (clientes
+// analisados, média acima do CDI, melhor ano) e uma tabela com linhas
+// zebradas. Respeita o "Período do filtro": se um ano estiver selecionado,
+// a imagem traz só aquele ano; se estiver em "Todo o histórico", traz uma
+// linha por ano disponível na base.
+async function gerarImagemCdiPorAno() {
+    const allYears = [...new Set(rentabilidadeData.map(r => r.mes.slice(0, 4)))].sort();
+    const years = (activeCdiPeriodFilter ? [activeCdiPeriodFilter] : allYears).slice().sort((a, b) => b.localeCompare(a));
+    const linhas = years.map(y => ({ ano: y, ...computeCdiSummary(y) })).filter(l => l.qualified > 0);
+
+    if (!linhas.length) {
+        alert('Nenhum cliente com % do CDI calculável para gerar a imagem.');
+        return;
+    }
+
+    const totalClientes = linhas.reduce((s, l) => s + l.qualified, 0);
+    const totalAcima = linhas.reduce((s, l) => s + l.acima, 0);
+    const mediaAcimaPct = totalClientes ? (totalAcima / totalClientes * 100) : 0;
+    let melhorAno = linhas[0].ano, melhorPct = -1;
+    linhas.forEach(l => {
+        const p = l.acima / l.qualified * 100;
+        if (p > melhorPct) { melhorPct = p; melhorAno = l.ano; }
+    });
+
+    await document.fonts.ready;
+
+    const W = 640;
+    const padX = 32, padTop = 28;
+    const headerH = 58;
+    const tileGap = 14, tileH = 58;
+    const tileW = (W - padX * 2 - tileGap * 2) / 3;
+    const gapAfterTiles = 24;
+    const rowHeaderH = 26;
+    const rowH = 30;
+    const footerH = 34;
+    const H = padTop + headerH + tileH + gapAfterTiles + rowHeaderH + linhas.length * rowH + footerH + padTop;
+    const scale = 2;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = W * scale;
+    canvas.height = H * scale;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(scale, scale);
+
+    function roundRect(x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+    }
+
+    // fundo + cartão
+    ctx.fillStyle = '#08090f';
+    ctx.fillRect(0, 0, W, H);
+    roundRect(0.5, 0.5, W - 1, H - 1, 8);
+    ctx.fillStyle = '#0d0f1a';
+    ctx.fill();
+    ctx.strokeStyle = '#232842';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // cabeçalho
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#cba869';
+    ctx.font = '700 9.5px "DM Sans"';
+    ctx.fillText('H U B   F I N A N C E I R O', padX, padTop + 10);
+    ctx.fillStyle = '#f2f3fa';
+    ctx.font = '600 19px "Playfair Display"';
+    ctx.fillText('Relatório de desempenho vs CDI', padX, padTop + 34);
+
+    const agora = new Date();
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#6b7295';
+    ctx.font = '400 10px "DM Mono"';
+    ctx.fillText(agora.toLocaleDateString('pt-BR'), W - padX, padTop + 10);
+    ctx.fillText(agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }), W - padX, padTop + 23);
+    ctx.textAlign = 'left';
+
+    // métricas em destaque
+    const tileY = padTop + headerH;
+    function tile(i, cor, label, valor) {
+        const tx = padX + i * (tileW + tileGap);
+        ctx.fillStyle = cor;
+        ctx.fillRect(tx, tileY, 2, tileH);
+        ctx.fillStyle = '#6b7295';
+        ctx.font = '600 9px "DM Sans"';
+        ctx.fillText(label.toUpperCase(), tx + 12, tileY + 16);
+        ctx.fillStyle = cor === '#38cf92' ? '#38cf92' : '#f2f3fa';
+        ctx.font = '600 22px "Playfair Display"';
+        ctx.fillText(valor, tx + 12, tileY + 42);
+    }
+    tile(0, '#cba869', 'Clientes analisados', String(totalClientes));
+    tile(1, '#38cf92', 'Média acima do CDI', mediaAcimaPct.toFixed(1).replace('.', ',') + '%');
+    tile(2, '#cba869', 'Melhor ano', melhorAno);
+
+    // tabela
+    const innerW = W - padX * 2;
+    const unit = innerW / 4;
+    const b0 = padX, b1 = b0 + 0.7 * unit, b2 = b1 + 0.9 * unit, b3 = b2 + 1.2 * unit, b4 = b3 + 1.2 * unit;
+
+    let y = tileY + tileH + gapAfterTiles;
+    ctx.font = '600 9.5px "DM Sans"';
+    ctx.fillStyle = '#6b7295';
+    ctx.textAlign = 'left';
+    ctx.fillText('ANO', b0, y + rowHeaderH - 9);
+    ctx.textAlign = 'center';
+    ctx.fillText('CLIENTES', (b1 + b2) / 2, y + rowHeaderH - 9);
+    ctx.textAlign = 'right';
+    ctx.fillText('ACIMA', b3, y + rowHeaderH - 9);
+    ctx.fillText('ABAIXO', b4, y + rowHeaderH - 9);
+    ctx.textAlign = 'left';
+    y += rowHeaderH;
+
+    linhas.forEach((l, i) => {
+        const pctAcima = (l.acima / l.qualified * 100).toFixed(1).replace('.', ',');
+        const pctAbaixo = (l.abaixo / l.qualified * 100).toFixed(1).replace('.', ',');
+
+        if (i % 2 === 0) {
+            roundRect(padX - 8, y, innerW + 16, rowH, 6);
+            ctx.fillStyle = '#141728';
+            ctx.fill();
+        }
+
+        ctx.font = '500 12px "DM Mono"';
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#f2f3fa';
+        ctx.fillText(l.ano, b0, y + rowH - 10);
+        ctx.textAlign = 'center';
+        ctx.fillText(String(l.qualified), (b1 + b2) / 2, y + rowH - 10);
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#38cf92';
+        ctx.fillText(`${l.acima} · ${pctAcima}%`, b3, y + rowH - 10);
+        ctx.fillStyle = '#f2594c';
+        ctx.fillText(`${l.abaixo} · ${pctAbaixo}%`, b4, y + rowH - 10);
+        ctx.textAlign = 'left';
+
+        y += rowH;
+    });
+
+    // rodapé
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#6b7295';
+    ctx.font = '400 9.5px "DM Sans"';
+    ctx.fillText('Hub Financeiro · PBF', W - padX, y + 22);
+    ctx.textAlign = 'left';
+
+    const stamp = new Date().toISOString().slice(0, 10);
+    const nomeArquivo = activeCdiPeriodFilter
+        ? `desempenho_cdi_${activeCdiPeriodFilter}_${stamp}.png`
+        : `desempenho_cdi_por_ano_${stamp}.png`;
+
+    canvas.toBlob(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = nomeArquivo;
+        a.click();
+        URL.revokeObjectURL(url);
+    }, 'image/png');
+}
+
 function renderClientsList() {
     renderCdiPeriodFilter();
     renderCdiSummary();
@@ -1099,6 +1332,146 @@ document.getElementById('cdiPeriodSelect').addEventListener('change', (e) => {
     activeCdiPeriodFilter = e.target.value || null;
     renderClientsList();
 });
+
+document.getElementById('btnBaixarImagemCdi').addEventListener('click', () => {
+    gerarImagemCdiPorAno();
+});
+
+document.getElementById('btnMetodologiaCdi').addEventListener('click', () => {
+    document.getElementById('modalMetodologia').classList.remove('hidden');
+});
+document.getElementById('btnFecharMetodologia').addEventListener('click', () => {
+    document.getElementById('modalMetodologia').classList.add('hidden');
+});
+document.getElementById('modalMetodologia').addEventListener('click', (e) => {
+    if (e.target.id === 'modalMetodologia') e.target.classList.add('hidden');
+});
+document.getElementById('btnExportarMetodologiaPdf').addEventListener('click', () => {
+    exportarMetodologiaPdf();
+});
+
+// Gera um PDF institucional (fundo claro, régua dourada, tipografia serifada
+// nos títulos) com a mesma metodologia explicada no modal, pronto para envio
+// a compliance ou a um terceiro que precise entender os cálculos.
+function exportarMetodologiaPdf() {
+    if (window._jspdfFailed || typeof window.jspdf === 'undefined') {
+        alert('Não foi possível carregar a biblioteca de PDF. Verifique sua conexão e recarregue a página.');
+        return;
+    }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const pageW = 210, pageH = 297;
+    const marginX = 22;
+    const contentW = pageW - marginX * 2;
+    let y = 24;
+
+    const goldC = [203, 168, 105];
+    const inkC = [17, 20, 42];
+    const mutedC = [110, 116, 145];
+    const bodyC = [55, 60, 84];
+    const lineC = [222, 226, 238];
+    const boxBgC = [244, 246, 251];
+
+    function heading(text) {
+        if (y + 12 > pageH - 26) { doc.addPage(); y = 24; }
+        doc.setFont('times', 'bold');
+        doc.setFontSize(12.5);
+        doc.setTextColor(...inkC);
+        doc.text(text, marginX, y);
+        y += 7;
+    }
+    function paragraph(text) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(...bodyC);
+        const lines = doc.splitTextToSize(text, contentW);
+        if (y + lines.length * 5 + 4 > pageH - 26) { doc.addPage(); y = 24; }
+        doc.text(lines, marginX, y);
+        y += lines.length * 5 + 5;
+    }
+    function formulaBox(text) {
+        doc.setFont('courier', 'normal');
+        doc.setFontSize(9.5);
+        const lines = doc.splitTextToSize(text, contentW - 10);
+        const boxH = lines.length * 5 + 6;
+        if (y + boxH + 6 > pageH - 26) { doc.addPage(); y = 24; }
+        doc.setFillColor(...boxBgC);
+        doc.setDrawColor(...lineC);
+        doc.setLineWidth(0.2);
+        doc.roundedRect(marginX, y - 4, contentW, boxH, 2, 2, 'FD');
+        doc.setTextColor(...inkC);
+        doc.text(lines, marginX + 5, y + 2);
+        y += boxH + 7;
+    }
+
+    // cabeçalho / letterhead
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...goldC);
+    doc.text('H U B   F I N A N C E I R O', marginX, y);
+    y += 9;
+    doc.setFont('times', 'bold');
+    doc.setFontSize(20);
+    doc.setTextColor(...inkC);
+    doc.text('Metodologia de Cálculo', marginX, y);
+    y += 7;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10.5);
+    doc.setTextColor(...mutedC);
+    doc.text('Desempenho de carteiras vs CDI', marginX, y);
+    y += 6;
+    const agora = new Date();
+    doc.setFontSize(8.5);
+    doc.text(`Gerado em ${agora.toLocaleDateString('pt-BR')} às ${agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`, marginX, y);
+    y += 7;
+    doc.setDrawColor(...goldC);
+    doc.setLineWidth(0.7);
+    doc.line(marginX, y, marginX + 34, y);
+    y += 13;
+
+    heading('1. Origem dos dados');
+    paragraph('A rentabilidade e o CDI de cada mês vêm do último dia útil disponível daquele mês, na aba "Evolução Patrimonial" do Excel carregado. Esse valor já é o acumulado do mês (não somamos os dias). Linhas de sábado e domingo são ignoradas na leitura.');
+
+    heading('2. Rentabilidade acumulada do cliente');
+    paragraph('Juros compostos de todos os meses considerados no período (todo o histórico do cliente, ou só o ano escolhido no seletor "Período do filtro"):');
+    formulaBox('rent. acumulada = (1 + r1) x (1 + r2) x ... x (1 + rn) - 1');
+
+    heading('3. CDI acumulado do período');
+    paragraph('Mesma lógica de juros compostos, mas usando apenas os meses em que há CDI informado para aquele cliente.');
+    formulaBox('CDI acumulado = (1 + cdi1) x (1 + cdi2) x ... x (1 + cdin) - 1');
+
+    heading('4. % do CDI');
+    formulaBox('% do CDI = (rent. acumulada / CDI acumulado) x 100');
+    paragraph('Se o cliente não tiver nenhum mês com CDI informado, ou o CDI acumulado der exatamente zero, o % do CDI não é calculado (fica de fora de qualquer contagem ou média).');
+
+    heading('5. Classificação acima / abaixo');
+    paragraph('% do CDI > 100% -> acima do CDI. % do CDI < 100% -> abaixo do CDI. Exatamente 100% -> não entra em nenhum dos dois grupos.');
+
+    heading('6. Efeito do "Período do filtro"');
+    paragraph('Ao escolher um ano específico, todo o cálculo acima (rentabilidade acumulada, CDI acumulado, % do CDI e a classificação) é refeito considerando só os meses daquele ano — não o histórico completo do cliente. Em "Todo o histórico", os cálculos usam todos os meses disponíveis.');
+
+    heading('7. Métricas da imagem exportada');
+    paragraph('Clientes analisados: soma dos clientes com % do CDI válido em cada ano mostrado.');
+    paragraph('Média acima do CDI: soma de clientes "acima" dividida pela soma de "clientes analisados" de todos os anos — uma média ponderada por cliente-ano (não a média simples dos percentuais de cada ano, que dá mais peso a anos com menos clientes).');
+    paragraph('Melhor ano: o ano com a maior proporção de clientes acima do CDI naquele ano.');
+
+    // rodapé com numeração, em todas as páginas
+    const totalPaginas = doc.internal.getNumberOfPages();
+    for (let p = 1; p <= totalPaginas; p++) {
+        doc.setPage(p);
+        doc.setDrawColor(...lineC);
+        doc.setLineWidth(0.2);
+        doc.line(marginX, pageH - 16, pageW - marginX, pageH - 16);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(...mutedC);
+        doc.text('Hub Financeiro · PBF', marginX, pageH - 11);
+        doc.text(`Página ${p} de ${totalPaginas}`, pageW - marginX, pageH - 11, { align: 'right' });
+    }
+
+    const stamp = new Date().toISOString().slice(0, 10);
+    doc.save(`metodologia_cdi_${stamp}.pdf`);
+}
 
 // ====================== EXPORTAÇÃO EXCEL ======================
 document.getElementById('btnExportarExcel').addEventListener('click', () => {
