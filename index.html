@@ -249,7 +249,10 @@ body.light .st.idle{background:var(--bg-card3);color:var(--tx3);border:1px solid
 .client-row.active{background:var(--gold-soft);}
 .client-row.active::before{opacity:1;}
 .client-row.active .cr-id{color:var(--gold2);}
-.cr-id{font-size:var(--fs-md);font-weight:600;color:var(--tx);display:flex;flex-direction:column;gap:3px;min-width:0;}
+.cr-id{font-size:var(--fs-md);font-weight:600;color:var(--tx);display:flex;align-items:center;gap:14px;min-width:0;}
+.cr-index{font-family:'DM Mono',monospace;font-size:var(--fs-sm);font-weight:400;color:var(--tx3);flex-shrink:0;min-width:22px;text-align:right;font-variant-numeric:tabular-nums;}
+.client-row.active .cr-index{color:var(--tx2);}
+.cr-id-text{display:flex;flex-direction:column;gap:3px;min-width:0;}
 .cr-id .code{font-family:'DM Mono',monospace;font-size:var(--fs-2xs);color:var(--gold);opacity:.85;font-weight:500;letter-spacing:.02em;}
 .cr-pos{font-size:var(--fs-sm);font-family:'DM Mono',monospace;color:var(--tx2);text-align:center;font-variant-numeric:tabular-nums;}
 .cr-label{font-size:var(--fs-2xs);color:var(--tx3);text-align:center;font-variant-numeric:tabular-nums;}
@@ -306,10 +309,40 @@ body.light .st.idle{background:var(--bg-card3);color:var(--tx3);border:1px solid
 .cdi-period-select:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-soft);outline:none;}
 .select-arrow{position:absolute;right:9px;top:50%;transform:translateY(-50%);font-size:17px;color:var(--tx3);pointer-events:none;}
 .select-wrap:hover .select-arrow{color:var(--gold);}
-.cdi-summary-bar{display:flex;gap:var(--sp-6);flex-wrap:wrap;align-items:baseline;background:var(--bg-card);border:1px solid var(--bd);border-radius:var(--r-lg);padding:var(--sp-4) var(--sp-5);margin-bottom:var(--sp-3);box-shadow:var(--shadow-xs);}
-.cdi-summary-bar .sp{font-size:var(--fs-sm);}
-.cdi-summary-note{font-size:var(--fs-xs);color:var(--tx3);}
+.cdi-summary-bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:var(--bg-card);border:1px solid var(--bd);border-radius:var(--r-lg);padding:var(--sp-4) var(--sp-5);margin-bottom:var(--sp-3);box-shadow:var(--shadow-xs);}
+.cdi-stat-group{display:flex;align-items:baseline;gap:6px;}
+.cdi-stat-num{font-size:1.125rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1;}
+.cdi-stat-num.pos{color:var(--pos);}
+.cdi-stat-num.neg{color:var(--neg);}
+.cdi-stat-label{font-size:var(--fs-xs);font-weight:600;}
+.cdi-stat-label.pos{color:var(--pos);}
+.cdi-stat-label.neg{color:var(--neg);}
+.cdi-stat-pct{font-size:var(--fs-2xs);color:var(--tx3);}
+.cdi-divider{width:1px;height:20px;background:var(--bd);flex-shrink:0;}
+.cdi-context{font-size:var(--fs-xs);color:var(--tx2);}
+.cdi-footnote{font-size:var(--fs-2xs);color:var(--tx3);margin-left:auto;}
 .cdi-summary-empty{font-size:var(--fs-xs);color:var(--tx3);padding:2px 0;}
+.cdi-period-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-card3);border:1px solid var(--bd);border-radius:999px;padding:7px 12px 7px 14px;font-size:var(--fs-xs);font-weight:600;color:var(--tx2);cursor:pointer;font-family:inherit;transition:border-color .15s,color .15s,box-shadow .15s;white-space:nowrap;}
+.cdi-period-btn:hover{border-color:var(--gold);color:var(--tx);}
+.cdi-period-btn:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-soft);outline:none;}
+.cdi-period-btn .material-symbols-outlined{font-size:17px;color:var(--tx3);}
+.ms-dropdown{position:relative;display:inline-flex;}
+.ms-dropdown-panel{position:absolute;top:calc(100% + 6px);left:0;min-width:190px;max-height:280px;overflow-y:auto;background:var(--bg-card2);border:1px solid var(--bd2);border-radius:var(--r-md);box-shadow:var(--shadow-lg);padding:6px;z-index:60;}
+.ms-dropdown-panel.hidden{display:none;}
+.ms-option{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--r-sm);font-size:var(--fs-xs);color:var(--tx2);cursor:pointer;user-select:none;transition:background .12s,color .12s;}
+.ms-option:hover{background:var(--bg-card3);color:var(--tx);}
+.ms-option input[type="checkbox"]{accent-color:var(--gold);width:14px;height:14px;cursor:pointer;flex-shrink:0;}
+.ms-option-all{font-weight:700;color:var(--gold2);}
+.ms-divider{height:1px;background:var(--bd);margin:5px 2px;}
+.advanced-filters-card{display:flex;align-items:center;gap:var(--sp-3);flex-wrap:wrap;background:var(--bg-card);border:1px solid var(--bd);border-radius:var(--r-lg);padding:var(--sp-4) var(--sp-5);margin-bottom:var(--sp-3);box-shadow:var(--shadow-xs);}
+.advanced-filters-card.collapsed{display:none;}
+.ios-switch{display:inline-flex;align-items:center;cursor:pointer;user-select:none;}
+.ios-switch input{display:none;}
+.ios-switch-track{width:38px;height:22px;background:var(--bg-card3);border:1px solid var(--bd);border-radius:999px;position:relative;transition:background .2s,border-color .2s;flex-shrink:0;}
+.ios-switch-track::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--tx3);transition:transform .2s,background .2s;}
+.ios-switch input:checked + .ios-switch-track{background:var(--gold-soft2);border-color:var(--gold);}
+.ios-switch input:checked + .ios-switch-track::after{transform:translateX(16px);background:var(--gold);}
+.ios-switch-label{font-size:var(--fs-xs);font-weight:600;color:var(--tx2);margin-left:8px;white-space:nowrap;}
 .chart-canvas-box{position:relative;height:320px;}
 @media(max-width:640px){.chart-canvas-box{height:260px;}.chart-wrap,.period-filter,.rp-header,.summary{padding-left:var(--sp-4);padding-right:var(--sp-4);}}
 .chart-tooltip{position:absolute;pointer-events:none;opacity:0;transition:opacity .1s;background:var(--bg-card2);border:1px solid var(--bd2);border-left:3px solid var(--gold);border-radius:var(--r-sm);padding:11px 15px;min-width:180px;z-index:20;box-shadow:var(--shadow-lg);}
@@ -347,7 +380,13 @@ table.rent-table td.winner{color:var(--gold2);}
 .modal-overlay.hidden{display:none;}
 .modal-box{background:var(--bg-card);border:1px solid var(--bd2);border-radius:var(--r-lg);padding:var(--sp-6);width:100%;max-width:380px;box-shadow:var(--shadow-lg);}
 .modal-box.wide{max-width:580px;}
-.modal-box.scroll{max-height:82vh;overflow-y:auto;}
+.modal-box.scroll{max-height:82vh;overflow:hidden;padding:0;display:flex;flex-direction:column;}
+.modal-scroll-inner{overflow-y:auto;padding:var(--sp-6);min-height:0;}
+.modal-scroll-inner::-webkit-scrollbar{width:3px;}
+.modal-scroll-inner::-webkit-scrollbar-track{background:transparent;}
+.modal-scroll-inner::-webkit-scrollbar-thumb{background:rgba(162,168,196,.25);border-radius:3px;}
+.modal-scroll-inner::-webkit-scrollbar-thumb:hover{background:rgba(162,168,196,.55);}
+.modal-scroll-inner{scrollbar-width:thin;scrollbar-color:rgba(162,168,196,.25) transparent;}
 .metodologia-body{font-size:var(--fs-sm);color:var(--tx2);line-height:1.65;}
 .metodologia-body h4{color:var(--tx);font-size:var(--fs-base);font-weight:700;margin:var(--sp-5) 0 6px;}
 .metodologia-body h4:first-child{margin-top:0;}
@@ -480,9 +519,14 @@ table.rent-table td.winner{color:var(--gold2);}
                 Exportar Excel
             </button>
             <span class="clients-stats" id="clientsStats"></span>
+            <label class="ios-switch" id="advFiltersToggleWrap">
+                <input type="checkbox" id="advFiltersToggle">
+                <span class="ios-switch-track"></span>
+                <span class="ios-switch-label">Filtros avançados</span>
+            </label>
         </div>
     </div>
-    <div class="clients-toolbar" id="cdiFilterRow">
+    <div class="advanced-filters-card collapsed" id="advancedFiltersCard">
         <span class="period-filter-label">Desempenho vs CDI</span>
         <div class="bm-segment" id="cdiFilterControls">
             <div class="bm-seg-item active" data-cdi="">Todos</div>
@@ -490,11 +534,16 @@ table.rent-table td.winner{color:var(--gold2);}
             <div class="bm-seg-item" data-cdi="below">Abaixo de 100% do CDI</div>
         </div>
         <span class="period-filter-label" style="margin-left:4px;">Período do filtro</span>
-        <div class="select-wrap">
-            <select class="cdi-period-select" id="cdiPeriodSelect">
-                <option value="">Todo o histórico</option>
-            </select>
-            <span class="material-symbols-outlined select-arrow">expand_more</span>
+        <div class="ms-dropdown" id="cdiPeriodDropdown">
+            <button type="button" class="cdi-period-btn" id="cdiPeriodBtn">
+                <span id="cdiPeriodBtnLabel">Todo o histórico</span>
+                <span class="material-symbols-outlined">expand_more</span>
+            </button>
+            <div class="ms-dropdown-panel hidden" id="cdiPeriodPanel">
+                <div class="ms-option ms-option-all" id="cdiPeriodAllBtn">Todo o histórico</div>
+                <div class="ms-divider"></div>
+                <div id="cdiPeriodYearOptions"></div>
+            </div>
         </div>
         <button class="btn-clear-base" id="btnBaixarImagemCdi" style="margin-left:4px;">
             <span class="material-symbols-outlined">image</span>
@@ -588,6 +637,7 @@ table.rent-table td.winner{color:var(--gold2);}
 
 <div class="modal-overlay hidden" id="modalMetodologia">
     <div class="modal-box wide scroll">
+        <div class="modal-scroll-inner">
         <div class="modal-title">Metodologia · Desempenho vs CDI</div>
         <div class="modal-sub">Como cada número desta tela e da imagem exportada é calculado.</div>
         <div class="metodologia-body">
@@ -613,9 +663,10 @@ table.rent-table td.winner{color:var(--gold2);}
             <p>Ao escolher um ano específico, todo o cálculo acima (rentabilidade acumulada, CDI acumulado, % do CDI e a classificação) é refeito considerando só os meses daquele ano — não o histórico completo do cliente. Em "Todo o histórico", os cálculos usam todos os meses disponíveis.</p>
 
             <h4>7. Métricas da imagem exportada</h4>
-            <p><strong>Clientes analisados</strong>: soma dos clientes com % do CDI válido em cada ano mostrado.</p>
-            <p><strong>Média acima do CDI</strong>: soma de clientes "acima" dividida pela soma de "clientes analisados" de todos os anos — uma média ponderada por cliente-ano (não a média simples dos percentuais de cada ano, que dá mais peso a anos com menos clientes).</p>
-            <p><strong>Melhor ano</strong>: o ano com a maior proporção de clientes acima do CDI naquele ano.</p>
+            <p><strong>Clientes únicos</strong>: quando "Todo o histórico" está selecionado, é o número de clientes distintos com % do CDI válido considerando o histórico completo de cada um — cada cliente conta uma única vez, mesmo que apareça em vários anos da tabela abaixo. Quando um ano específico está selecionado, é simplesmente o número de clientes válidos naquele ano.</p>
+            <p><strong>Acima do CDI</strong>: percentual desses mesmos clientes únicos que ficou acima do CDI no período considerado (histórico completo ou ano selecionado). Não é uma média dos percentuais de cada ano — é calculado uma vez, por cliente, sem duplicar quem tem vários anos de histórico.</p>
+            <p><strong>Melhor ano</strong>: o ano com a maior proporção de clientes acima do CDI naquele ano (linha da tabela, sempre por cliente-ano — útil para ver tendência, não para o total de clientes).</p>
+            <p style="color:var(--tx3);font-size:var(--fs-xs);">Nota: a tabela abaixo continua mostrando uma linha por ano, com a contagem de clientes daquele ano específico — normal que a soma dessas linhas seja maior que "Clientes únicos", já que o mesmo cliente pode aparecer em várias linhas.</p>
         </div>
         <div class="modal-actions">
             <button class="modal-btn cancel" id="btnFecharMetodologia" style="flex:none;padding:11px 22px;">Fechar</button>
@@ -623,6 +674,7 @@ table.rent-table td.winner{color:var(--gold2);}
                 <span class="material-symbols-outlined" style="font-size:17px;">picture_as_pdf</span>
                 Exportar PDF
             </button>
+        </div>
         </div>
     </div>
 </div>
@@ -641,9 +693,9 @@ let pendingRentabilidade = null;   // registros parseados do excel mensal, aguar
 let currentClient = null;
 let currentFilter = '';
 let activeCdiFilter = null;        // null = todos; 'above' = acima de 100% do CDI; 'below' = abaixo de 100% do CDI
-let activeCdiPeriodFilter = null;  // null = todo o histórico do cliente; senão string "YYYY" -> restringe o cálculo % do CDI a esse ano
+let activeCdiPeriodFilter = null;  // null = todo o histórico; senão array de strings "YYYY" (1 ou mais anos) -> restringe o cálculo % do CDI a esses anos
 let activeBenchmarks = new Set();  // quais benchmarks estão marcados no gráfico
-let activeYearFilter = null;       // null = todos os anos; senão string "YYYY"
+let activeYearFilter = null;       // null = todos os anos; senão array de strings "YYYY" (1 ou mais anos)
 let chartInstance = null;
 
 const BENCHMARKS = [
@@ -700,16 +752,21 @@ function renderBaseStatus() {
 }
 
 // ====================== % DO CDI POR CLIENTE (histórico completo ou por período) ======================
-// Calcula, usando o histórico do cliente (ou apenas o ano informado em `year`, se houver):
+// Calcula, usando o histórico do cliente (ou apenas os anos informados em `period`, se houver):
 // - rentabilidade acumulada (juros compostos dos meses considerados)
 // - CDI acumulado (juros compostos do CDI nos meses em que há CDI informado)
 // - % do CDI = (rentabilidade acumulada / CDI acumulado) * 100
-// `year` (opcional): string "YYYY" -> restringe os registros àquele ano, em vez do histórico completo.
+// `period` (opcional): string "YYYY" (um ano) ou array de strings ["YYYY","YYYY",...]
+// (vários anos, união dos meses de cada um) -> restringe os registros a esses anos,
+// em vez do histórico completo. null/undefined/array vazio = histórico completo.
 // Retorna null se o cliente não tiver nenhum registro de rentabilidade no período considerado.
 // pctCdi vem null se não houver CDI acumulado válido (sem dados de CDI, ou CDI acumulado = 0).
-function clientCdiStats(code, year) {
+function clientCdiStats(code, period) {
     let recs = rentabilidadeData.filter(r => r.cliente === code).sort((a, b) => a.mes.localeCompare(b.mes));
-    if (year) recs = recs.filter(r => r.mes.startsWith(year));
+    if (period) {
+        const years = Array.isArray(period) ? period : [period];
+        if (years.length) recs = recs.filter(r => years.includes(r.mes.slice(0, 4)));
+    }
     if (!recs.length) return null;
 
     const rentAcum = recs.reduce((acc, r) => acc * (1 + r.rentabilidade), 1) - 1;
@@ -740,6 +797,16 @@ function passesCdiFilter(code) {
     if (activeCdiFilter === 'above') return stats.pctCdi > 100;
     if (activeCdiFilter === 'below') return stats.pctCdi < 100;
     return true;
+}
+
+// O "Período do filtro" também restringe a lista de clientes por conta própria,
+// independente do filtro Acima/Abaixo/Todos: se um ou mais anos estiverem
+// selecionados, só entram clientes com pelo menos um registro de rentabilidade
+// em algum desses anos. Com "Todo o histórico" (activeCdiPeriodFilter vazio/null),
+// não filtra nada aqui.
+function passesPeriodFilter(code) {
+    if (!activeCdiPeriodFilter || !activeCdiPeriodFilter.length) return true;
+    return rentabilidadeData.some(r => r.cliente === code && activeCdiPeriodFilter.includes(r.mes.slice(0, 4)));
 }
 
 // ====================== LEITURA DE EXCEL ======================
@@ -1039,28 +1106,71 @@ function clientMeta(code) {
     return { nMeses, ultima };
 }
 
-// Repopula o dropdown "Período do filtro" com os anos presentes em rentabilidadeData.
-// Preserva a seleção ativa quando o ano continua disponível; caso contrário volta
-// para "Todo o histórico".
+// Repopula o dropdown "Período do filtro" (checkboxes de ano) com os anos presentes em
+// rentabilidadeData. Suporta selecionar 0 anos ("Todo o histórico"), 1 ano ou vários anos
+// ao mesmo tempo (activeCdiPeriodFilter é um array de strings "YYYY", ou null = todos).
+// Preserva a seleção ativa quando os anos continuam disponíveis; remove os que sumiram.
 function renderCdiPeriodFilter() {
-    const sel = document.getElementById('cdiPeriodSelect');
-    if (!sel) return;
+    const box = document.getElementById('cdiPeriodYearOptions');
+    if (!box) return;
     const years = [...new Set(rentabilidadeData.map(r => r.mes.slice(0, 4)))].sort();
-    if (activeCdiPeriodFilter && !years.includes(activeCdiPeriodFilter)) activeCdiPeriodFilter = null;
 
-    sel.innerHTML = `<option value="">Todo o histórico</option>` +
-        years.map(y => `<option value="${y}"${activeCdiPeriodFilter === y ? ' selected' : ''}>${y}</option>`).join('');
-    sel.value = activeCdiPeriodFilter || '';
+    if (Array.isArray(activeCdiPeriodFilter)) {
+        activeCdiPeriodFilter = activeCdiPeriodFilter.filter(y => years.includes(y));
+        if (!activeCdiPeriodFilter.length) activeCdiPeriodFilter = null;
+    }
+
+    box.innerHTML = years.map(y => {
+        const checked = Array.isArray(activeCdiPeriodFilter) && activeCdiPeriodFilter.includes(y);
+        return `<label class="ms-option"><input type="checkbox" data-year="${y}"${checked ? ' checked' : ''}> ${y}</label>`;
+    }).join('');
+
+    box.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.addEventListener('change', () => {
+            const y = cb.dataset.year;
+            let arr = Array.isArray(activeCdiPeriodFilter) ? [...activeCdiPeriodFilter] : [];
+            if (cb.checked) { if (!arr.includes(y)) arr.push(y); }
+            else { arr = arr.filter(v => v !== y); }
+            activeCdiPeriodFilter = arr.length ? arr : null;
+            renderClientsList();
+        });
+    });
+
+    updateCdiPeriodLabel();
+}
+
+// Atualiza o texto do botão do dropdown de período com um resumo da seleção atual.
+function updateCdiPeriodLabel() {
+    const label = document.getElementById('cdiPeriodBtnLabel');
+    if (!label) return;
+    if (!activeCdiPeriodFilter || !activeCdiPeriodFilter.length) {
+        label.textContent = 'Todo o histórico';
+    } else if (activeCdiPeriodFilter.length === 1) {
+        label.textContent = activeCdiPeriodFilter[0];
+    } else if (activeCdiPeriodFilter.length <= 3) {
+        label.textContent = [...activeCdiPeriodFilter].sort().join(', ');
+    } else {
+        label.textContent = `${activeCdiPeriodFilter.length} anos selecionados`;
+    }
 }
 
 // Conta, para o período ativo (activeCdiPeriodFilter), quantos clientes ficaram
 // acima/abaixo/exatamente em 100% do CDI, entre os que têm % do CDI válido naquele
 // período. Independe do filtro Acima/Abaixo/Todos selecionado — é sempre a "foto"
 // completa do período escolhido no dropdown.
+// `totalPeriodo` = clientes com QUALQUER registro de rentabilidade no período (é o
+// mesmo critério usado por passesPeriodFilter para montar a lista abaixo) — pode ser
+// maior que `qualified`, já que nem todo cliente com registro tem CDI informado
+// naquele período específico.
 function computeCdiSummary(period) {
     const codes = getClientCodes();
-    let qualified = 0, acima = 0, abaixo = 0, exato = 0;
+    let totalPeriodo = 0, qualified = 0, acima = 0, abaixo = 0, exato = 0;
     codes.forEach(code => {
+        const temRegistroNoPeriodo = (!period || !period.length)
+            ? rentabilidadeData.some(r => r.cliente === code)
+            : rentabilidadeData.some(r => r.cliente === code && period.includes(r.mes.slice(0, 4)));
+        if (temRegistroNoPeriodo) totalPeriodo++;
+
         const cstats = clientCdiStats(code, period);
         if (!cstats || cstats.pctCdi === null || isNaN(cstats.pctCdi)) return;
         qualified++;
@@ -1068,43 +1178,67 @@ function computeCdiSummary(period) {
         else if (cstats.pctCdi < 100) abaixo++;
         else exato++;
     });
-    return { qualified, acima, abaixo, exato };
+    return { totalPeriodo, qualified, acima, abaixo, exato };
 }
 
-// Renderiza a barra de resumo "N acima / N abaixo do CDI (%)" para o período ativo.
+// Renderiza a barra de resumo "N acima / N abaixo do CDI (%)" para o período ativo,
+// junto com o total de clientes com registro no período (mesmo total que aparece na
+// lista abaixo), para deixar claro por que os dois números podem ser diferentes.
 function renderCdiSummary() {
     const el = document.getElementById('cdiSummary');
     if (!el) return;
     const period = activeCdiPeriodFilter;
-    const { qualified, acima, abaixo, exato } = computeCdiSummary(period);
-    const periodoLabel = period ? `em ${period}` : 'em todo o histórico';
+    const { totalPeriodo, qualified, acima, abaixo, exato } = computeCdiSummary(period);
+    let periodoLabel;
+    if (!period || !period.length) periodoLabel = 'em todo o histórico';
+    else if (period.length === 1) periodoLabel = `em ${period[0]}`;
+    else periodoLabel = `em ${[...period].sort().join(', ')}`;
+
+    if (!totalPeriodo) {
+        el.innerHTML = `<div class="cdi-summary-empty">Nenhum cliente com registro ${periodoLabel} ainda.</div>`;
+        return;
+    }
 
     if (!qualified) {
-        el.innerHTML = `<div class="cdi-summary-empty">Nenhum cliente com % do CDI calculável ${periodoLabel} ainda.</div>`;
+        el.innerHTML = `<div class="cdi-summary-empty">${totalPeriodo} cliente${totalPeriodo !== 1 ? 's' : ''} com registro ${periodoLabel}, mas nenhum com % do CDI calculável (sem CDI informado no período).</div>`;
         return;
     }
 
     const pctAcima = (acima / qualified * 100).toFixed(1).replace('.', ',');
     const pctAbaixo = (abaixo / qualified * 100).toFixed(1).replace('.', ',');
-    const notaExato = exato ? ` <span class="cdi-summary-note">· ${exato} exatamente em 100% do CDI</span>` : '';
+    const notaExato = exato ? `${exato} exatamente em 100% do CDI` : '';
+    const notaSemCdi = totalPeriodo > qualified ? `${totalPeriodo - qualified} sem CDI informado` : '';
+    const footnoteParts = [notaSemCdi, notaExato].filter(Boolean).join(' · ');
+    const footnoteHtml = footnoteParts ? `<div class="cdi-footnote">${footnoteParts}</div>` : '';
 
     el.innerHTML = `
-        <span class="sp total"><span class="sp-d"></span>${qualified} cliente${qualified !== 1 ? 's' : ''} com % do CDI calculado ${periodoLabel}</span>
-        <span class="sp pos"><span class="sp-d"></span>${acima} acima do CDI <span class="cdi-note">(${pctAcima}%)</span></span>
-        <span class="sp neg"><span class="sp-d"></span>${abaixo} abaixo do CDI <span class="cdi-note">(${pctAbaixo}%)</span></span>
-        ${notaExato}
+        <div class="cdi-stat-group">
+            <span class="cdi-stat-num pos">${acima}</span>
+            <span class="cdi-stat-label pos">acima</span>
+            <span class="cdi-stat-pct">(${pctAcima}%)</span>
+        </div>
+        <div class="cdi-divider"></div>
+        <div class="cdi-stat-group">
+            <span class="cdi-stat-num neg">${abaixo}</span>
+            <span class="cdi-stat-label neg">abaixo</span>
+            <span class="cdi-stat-pct">(${pctAbaixo}%)</span>
+        </div>
+        <div class="cdi-divider"></div>
+        <div class="cdi-context">${qualified} de ${totalPeriodo} clientes calculáveis ${periodoLabel}</div>
+        ${footnoteHtml}
     `;
 }
 
 // Gera e baixa um PNG no estilo "resumo executivo" com o desempenho vs CDI
 // por ano: cabeçalho com data/hora, 3 métricas em destaque (clientes
-// analisados, média acima do CDI, melhor ano) e uma tabela com linhas
-// zebradas. Respeita o "Período do filtro": se um ano estiver selecionado,
-// a imagem traz só aquele ano; se estiver em "Todo o histórico", traz uma
-// linha por ano disponível na base.
+// únicos, % acima do CDI, melhor ano) e uma tabela com linhas
+// zebradas. Respeita o "Período do filtro": se um ou mais anos estiverem
+// selecionados, a imagem traz só esses anos; se estiver em "Todo o
+// histórico", traz uma linha por ano disponível na base.
 async function gerarImagemCdiPorAno() {
     const allYears = [...new Set(rentabilidadeData.map(r => r.mes.slice(0, 4)))].sort();
-    const years = (activeCdiPeriodFilter ? [activeCdiPeriodFilter] : allYears).slice().sort((a, b) => b.localeCompare(a));
+    const periodoAtivo = (activeCdiPeriodFilter && activeCdiPeriodFilter.length) ? activeCdiPeriodFilter : null;
+    const years = (periodoAtivo ? [...periodoAtivo] : allYears).sort((a, b) => b.localeCompare(a));
     const linhas = years.map(y => ({ ano: y, ...computeCdiSummary(y) })).filter(l => l.qualified > 0);
 
     if (!linhas.length) {
@@ -1114,12 +1248,20 @@ async function gerarImagemCdiPorAno() {
 
     const totalClientes = linhas.reduce((s, l) => s + l.qualified, 0);
     const totalAcima = linhas.reduce((s, l) => s + l.acima, 0);
-    const mediaAcimaPct = totalClientes ? (totalAcima / totalClientes * 100) : 0;
     let melhorAno = linhas[0].ano, melhorPct = -1;
     linhas.forEach(l => {
         const p = l.acima / l.qualified * 100;
         if (p > melhorPct) { melhorPct = p; melhorAno = l.ano; }
     });
+
+    // Métricas de destaque: clientes ÚNICOS considerando o(s) ano(s) selecionado(s)
+    // (ou o histórico completo, se "Todo o histórico" estiver ativo). Isso conta
+    // cada cliente uma única vez, mesmo que apareça em várias linhas/anos da
+    // tabela abaixo — diferente da soma "clientes-ano" (totalClientes acima).
+    const statsHeadline = computeCdiSummary(periodoAtivo);
+    const totalClientesUnicos = statsHeadline.qualified;
+    const totalAcimaUnicos = statsHeadline.acima;
+    const mediaAcimaPct = totalClientesUnicos ? (totalAcimaUnicos / totalClientesUnicos * 100) : 0;
 
     await document.fonts.ready;
 
@@ -1191,8 +1333,8 @@ async function gerarImagemCdiPorAno() {
         ctx.font = '600 22px "Playfair Display"';
         ctx.fillText(valor, tx + 12, tileY + 42);
     }
-    tile(0, '#cba869', 'Clientes analisados', String(totalClientes));
-    tile(1, '#38cf92', 'Média acima do CDI', mediaAcimaPct.toFixed(1).replace('.', ',') + '%');
+    tile(0, '#cba869', 'Clientes únicos', String(totalClientesUnicos));
+    tile(1, '#38cf92', 'Acima do CDI', mediaAcimaPct.toFixed(1).replace('.', ',') + '%');
     tile(2, '#cba869', 'Melhor ano', melhorAno);
 
     // tabela
@@ -1247,9 +1389,13 @@ async function gerarImagemCdiPorAno() {
     ctx.textAlign = 'left';
 
     const stamp = new Date().toISOString().slice(0, 10);
-    const nomeArquivo = activeCdiPeriodFilter
-        ? `desempenho_cdi_${activeCdiPeriodFilter}_${stamp}.png`
-        : `desempenho_cdi_por_ano_${stamp}.png`;
+    let sufixoArquivo = 'por_ano';
+    if (periodoAtivo && periodoAtivo.length) {
+        sufixoArquivo = periodoAtivo.length <= 3
+            ? [...periodoAtivo].sort().join('-')
+            : `${periodoAtivo.length}anos`;
+    }
+    const nomeArquivo = `desempenho_cdi_${sufixoArquivo}_${stamp}.png`;
 
     canvas.toBlob(blob => {
         const url = URL.createObjectURL(blob);
@@ -1275,6 +1421,7 @@ function renderClientsList() {
             const bate = code.toLowerCase().includes(currentFilter.toLowerCase()) || nome.includes(currentFilter.toLowerCase());
             if (!bate) return false;
         }
+        if (!passesPeriodFilter(code)) return false;
         return passesCdiFilter(code);
     });
 
@@ -1290,12 +1437,15 @@ function renderClientsList() {
     document.querySelector('.clients-table-wrap').style.display = 'block';
 
     const chevron = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>`;
-    grid.innerHTML = filtered.map(code => {
+    grid.innerHTML = filtered.map((code, idx) => {
         const isActive = code === currentClient;
         const meta = clientMeta(code);
         const nome = clientNames[code];
         return `<div class="client-row${isActive ? ' active' : ''}" data-id="${esc(code)}" onclick="selectClient('${esc(code)}')">
-            <div class="cr-id">${nome ? esc(nome) : esc(code)}${nome ? `<span class="code">${esc(code)}</span>` : ''}</div>
+            <div class="cr-id">
+                <span class="cr-index">${String(idx + 1).padStart(2, '0')}</span>
+                <div class="cr-id-text">${nome ? esc(nome) : esc(code)}${nome ? `<span class="code">${esc(code)}</span>` : ''}</div>
+            </div>
             <div class="cr-pos">${meta.nMeses || '—'}</div>
             <div class="cr-label">${meta.ultima ? fmtMes(meta.ultima) : '—'}</div>
             <div class="cr-arrow">${chevron}</div>
@@ -1328,10 +1478,37 @@ document.getElementById('cdiFilterControls').querySelectorAll('.bm-seg-item').fo
         renderClientsList();
     });
 });
-document.getElementById('cdiPeriodSelect').addEventListener('change', (e) => {
-    activeCdiPeriodFilter = e.target.value || null;
+document.getElementById('cdiPeriodBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById('cdiPeriodPanel').classList.toggle('hidden');
+});
+document.getElementById('cdiPeriodAllBtn').addEventListener('click', () => {
+    activeCdiPeriodFilter = null;
     renderClientsList();
 });
+document.addEventListener('click', (e) => {
+    const dd = document.getElementById('cdiPeriodDropdown');
+    const panel = document.getElementById('cdiPeriodPanel');
+    if (dd && panel && !dd.contains(e.target)) panel.classList.add('hidden');
+});
+
+// ====================== TOGGLE "FILTROS AVANÇADOS" ======================
+// Mostra/esconde o card com Desempenho vs CDI, Período do filtro, Baixar imagem
+// e Metodologia. Estado lembrado entre sessões (mesmo padrão do botão de tema).
+(function () {
+    const toggle = document.getElementById('advFiltersToggle');
+    const card = document.getElementById('advancedFiltersCard');
+    let savedOpen = null;
+    try { savedOpen = localStorage.getItem('advFiltersOpen'); } catch (e) { savedOpen = null; }
+    if (savedOpen === '1') {
+        toggle.checked = true;
+        card.classList.remove('collapsed');
+    }
+    toggle.addEventListener('change', () => {
+        card.classList.toggle('collapsed', !toggle.checked);
+        try { localStorage.setItem('advFiltersOpen', toggle.checked ? '1' : '0'); } catch (e) {}
+    });
+})();
 
 document.getElementById('btnBaixarImagemCdi').addEventListener('click', () => {
     gerarImagemCdiPorAno();
@@ -1451,9 +1628,10 @@ function exportarMetodologiaPdf() {
     paragraph('Ao escolher um ano específico, todo o cálculo acima (rentabilidade acumulada, CDI acumulado, % do CDI e a classificação) é refeito considerando só os meses daquele ano — não o histórico completo do cliente. Em "Todo o histórico", os cálculos usam todos os meses disponíveis.');
 
     heading('7. Métricas da imagem exportada');
-    paragraph('Clientes analisados: soma dos clientes com % do CDI válido em cada ano mostrado.');
-    paragraph('Média acima do CDI: soma de clientes "acima" dividida pela soma de "clientes analisados" de todos os anos — uma média ponderada por cliente-ano (não a média simples dos percentuais de cada ano, que dá mais peso a anos com menos clientes).');
-    paragraph('Melhor ano: o ano com a maior proporção de clientes acima do CDI naquele ano.');
+    paragraph('Clientes únicos: com "Todo o histórico" selecionado, é o número de clientes distintos com % do CDI válido considerando o histórico completo de cada um -- cada cliente conta uma única vez, mesmo aparecendo em vários anos na tabela. Com um ano específico selecionado, é o número de clientes válidos naquele ano.');
+    paragraph('Acima do CDI: percentual desses clientes únicos que ficou acima do CDI no período considerado (histórico completo ou ano selecionado) -- não é uma média dos percentuais de cada ano, e sim um cálculo único por cliente, sem duplicar quem tem vários anos de histórico.');
+    paragraph('Melhor ano: o ano com a maior proporção de clientes acima do CDI naquele ano (linha da tabela, sempre por cliente-ano -- útil para ver tendência, não para o total de clientes).');
+    paragraph('Nota: a tabela abaixo do cabeçalho mostra uma linha por ano, com a contagem de clientes daquele ano específico. É normal que a soma dessas linhas seja maior que "Clientes únicos", já que o mesmo cliente pode aparecer em várias linhas.');
 
     // rodapé com numeração, em todas as páginas
     const totalPaginas = doc.internal.getNumberOfPages();
@@ -1529,7 +1707,12 @@ document.getElementById('btnExportarExcel').addEventListener('click', () => {
     abaixoRows.sort((a, b) => a['% do CDI'] - b['% do CDI']);
 
     const extraCols = [{ wch: 12 }, { wch: 28 }, { wch: 16 }, { wch: 24 }, { wch: 22 }, { wch: 18 }, { wch: 12 }];
-    const periodoSuffix = activeCdiPeriodFilter ? ` ${activeCdiPeriodFilter}` : '';
+    let periodoSuffix = '';
+    if (activeCdiPeriodFilter && activeCdiPeriodFilter.length) {
+        periodoSuffix = activeCdiPeriodFilter.length <= 3
+            ? ` ${[...activeCdiPeriodFilter].sort().join('-')}`
+            : ` ${activeCdiPeriodFilter.length} anos`;
+    }
     if (acimaRows.length) {
         const wsAcima = XLSX.utils.json_to_sheet(acimaRows);
         wsAcima['!cols'] = extraCols;
@@ -1570,20 +1753,29 @@ function selectClient(code, scroll = true) {
     }
 
     const availableYears = [...new Set(allRecs.map(r => r.mes.slice(0, 4)))].sort();
-    if (activeYearFilter && !availableYears.includes(activeYearFilter)) activeYearFilter = null;
+    if (Array.isArray(activeYearFilter)) {
+        activeYearFilter = activeYearFilter.filter(y => availableYears.includes(y));
+        if (!activeYearFilter.length) activeYearFilter = null;
+    }
 
     const yearFilterHtml = availableYears.length > 1 ? `
         <div class="period-filter">
             <span class="period-filter-label">Período</span>
             <div class="bm-segment" id="yearFilterControls">
                 <div class="bm-seg-item${!activeYearFilter ? ' active' : ''}" data-year="" style="${!activeYearFilter ? 'background:#C5A059;' : ''}">Todos</div>
-                ${availableYears.map(y => `<div class="bm-seg-item${activeYearFilter === y ? ' active' : ''}" data-year="${y}" style="${activeYearFilter === y ? 'background:#C5A059;' : ''}">${y}</div>`).join('')}
+                ${availableYears.map(y => {
+                    const isActive = Array.isArray(activeYearFilter) && activeYearFilter.includes(y);
+                    return `<div class="bm-seg-item${isActive ? ' active' : ''}" data-year="${y}" style="${isActive ? 'background:#C5A059;' : ''}">${y}</div>`;
+                }).join('')}
             </div>
         </div>` : '';
 
-    const recs = activeYearFilter ? allRecs.filter(r => r.mes.startsWith(activeYearFilter)) : allRecs;
+    const recs = (Array.isArray(activeYearFilter) && activeYearFilter.length)
+        ? allRecs.filter(r => activeYearFilter.includes(r.mes.slice(0, 4)))
+        : allRecs;
 
     if (!recs.length) {
+        const periodoVazioLabel = Array.isArray(activeYearFilter) ? activeYearFilter.join(', ') : '';
         section.innerHTML = `
         <div class="result-panel">
             <div class="rp-header">
@@ -1593,7 +1785,7 @@ function selectClient(code, scroll = true) {
                 </div>
             </div>
             ${yearFilterHtml}
-            <div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Nenhum registro em ${esc(activeYearFilter)}.</div></div>
+            <div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Nenhum registro em ${esc(periodoVazioLabel)}.</div></div>
         </div>`;
         bindYearFilter(code);
         if (scroll) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1734,7 +1926,16 @@ function bindYearFilter(code) {
     if (!el) return;
     el.querySelectorAll('.bm-seg-item').forEach(item => {
         item.addEventListener('click', () => {
-            activeYearFilter = item.dataset.year || null;
+            const y = item.dataset.year;
+            if (!y) {
+                // clicou em "Todos"
+                activeYearFilter = null;
+            } else {
+                let arr = Array.isArray(activeYearFilter) ? [...activeYearFilter] : [];
+                if (arr.includes(y)) arr = arr.filter(v => v !== y);
+                else arr.push(y);
+                activeYearFilter = arr.length ? arr : null;
+            }
             selectClient(code, false);
         });
     });
