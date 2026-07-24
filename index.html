@@ -38,6 +38,16 @@
     var s=document.createElement('script');s.src=cdns[i++];s.onerror=next;document.head.appendChild(s);}
   next();
 })();
+(function(){
+  var cdns=[
+    'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+    'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',
+    'https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js'
+  ],i=0;
+  function next(){if(i>=cdns.length){window._html2canvasFailed=true;return;}
+    var s=document.createElement('script');s.src=cdns[i++];s.onerror=next;document.head.appendChild(s);}
+  next();
+})();
 </script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -291,6 +301,11 @@ body.light .st.idle{background:var(--bg-card3);color:var(--tx3);border:1px solid
 
 .chart-wrap{padding:var(--sp-6);border-bottom:1px solid var(--bd);}
 .chart-controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:var(--sp-4);}
+.chart-actions{display:flex;gap:8px;align-items:center;margin-left:auto;flex-shrink:0;order:3;}
+.btn-copy-chart{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;font-size:var(--fs-xs);font-weight:600;cursor:pointer;border:1px solid var(--bd);background:var(--bg-card3);color:var(--tx2);font-family:inherit;transition:all .15s;white-space:nowrap;flex-shrink:0;}
+.btn-copy-chart:hover{border-color:var(--bd2);color:var(--tx);}
+.btn-copy-chart .material-symbols-outlined{font-size:15px;}
+.btn-copy-chart.copied{border-color:rgba(56,207,146,.45);background:var(--pos-soft);color:var(--pos);}
 .period-filter{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-4) var(--sp-6);border-bottom:1px solid var(--bd);flex-wrap:wrap;background:var(--bg-card2);}
 .period-filter-label{font-size:var(--fs-xs);font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--tx3);}
 .bm-segment{display:inline-flex;gap:3px;border-radius:999px;border:1px solid var(--bd);background:var(--bg-card3);padding:3px;}
@@ -1876,14 +1891,26 @@ function selectClient(code, scroll = true) {
             </div>
             <div class="rp-client">${primeiroMes} — ${ultimoMes}</div>
         </div>
+        <div id="clientChartCapture" class="client-chart-capture">
         ${yearFilterHtml}
         <div class="summary">
             <span class="sp total"><span class="sp-d"></span>${recs.length} mes${recs.length !== 1 ? 'es' : ''} registrado${recs.length !== 1 ? 's' : ''}</span>
             <span class="sp ${acumulado >= 0 ? 'pos' : 'neg'}"><span class="sp-d"></span>Acumulado no período: ${fmtPct(acumulado)}${cdiResumoHtml}</span>
+            <div class="chart-actions">
+                <button class="btn-copy-chart" id="btnCopyChart" type="button" title="Copiar período, indicadores e gráfico para colar em uma conversa com o cliente">
+                    <span class="material-symbols-outlined" id="copyChartIcon">content_copy</span>
+                    <span id="copyChartLabel">Copiar</span>
+                </button>
+                <button class="btn-copy-chart" id="btnSaveChart" type="button" title="Salvar período, indicadores e gráfico como imagem PNG">
+                    <span class="material-symbols-outlined" id="saveChartIcon">download</span>
+                    <span id="saveChartLabel">Salvar</span>
+                </button>
+            </div>
         </div>
         <div class="chart-wrap">
             <div class="chart-controls" id="benchmarkControls"></div>
             <div class="chart-canvas-box"><canvas id="rentChart"></canvas></div>
+        </div>
         </div>
         <div class="table-wrap">
             <table class="rent-table">
@@ -1917,6 +1944,11 @@ function selectClient(code, scroll = true) {
     });
 
     renderChart(recs, benchmarksComDados);
+
+    const btnCopy = document.getElementById('btnCopyChart');
+    if (btnCopy) btnCopy.addEventListener('click', copyChartToClipboard);
+    const btnSave = document.getElementById('btnSaveChart');
+    if (btnSave) btnSave.addEventListener('click', saveChartAsPng);
 
     if (scroll) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -2008,6 +2040,112 @@ function externalTooltipHandler(context) {
     el.style.opacity = 1;
     el.style.left = left + 'px';
     el.style.top = (boxTop + tooltip.caretY - 10) + 'px';
+}
+
+// Rasteriza a área de "Período · Acumulado · indicadores · gráfico" (id
+// clientChartCapture) usando html2canvas, excluindo os botões "Copiar"/"Salvar"
+// do resultado. Se a lib não tiver carregado (falha de rede), cai de volta para
+// capturar só o gráfico (canvas puro), pra sempre entregar alguma coisa em vez
+// de travar. Fundo sólido (não transparente), combinando com o tema atual.
+async function getClientChartCanvas() {
+    const isLight = document.body.classList.contains('light');
+    const bgColor = isLight ? '#ffffff' : '#0e1120';
+    const area = document.getElementById('clientChartCapture');
+
+    if (area && !window._html2canvasFailed && typeof html2canvas === 'function') {
+        return await html2canvas(area, {
+            backgroundColor: bgColor,
+            scale: Math.min(window.devicePixelRatio || 1, 2) * 1.5,
+            useCORS: true,
+            ignoreElements: (el) => el.id === 'btnCopyChart' || el.id === 'btnSaveChart'
+        });
+    }
+
+    const canvas = document.getElementById('rentChart');
+    if (!canvas) throw new Error('Gráfico não encontrado.');
+    const composite = document.createElement('canvas');
+    composite.width = canvas.width;
+    composite.height = canvas.height;
+    const ctx = composite.getContext('2d');
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, composite.width, composite.height);
+    ctx.drawImage(canvas, 0, 0);
+    return composite;
+}
+
+// Copia a imagem (Período · Acumulado · indicadores · gráfico) para a área de
+// transferência, pronta pra colar numa conversa com o cliente. No sucesso, o
+// botão fica verde com um ícone de check por alguns segundos e volta ao normal.
+async function copyChartToClipboard() {
+    const btn = document.getElementById('btnCopyChart');
+    const icon = document.getElementById('copyChartIcon');
+    const label = document.getElementById('copyChartLabel');
+    if (!btn) return;
+
+    const marcarSucesso = () => {
+        btn.classList.add('copied');
+        if (icon) icon.textContent = 'check';
+        if (label) label.textContent = 'Copiado!';
+        clearTimeout(btn._copyResetTimer);
+        btn._copyResetTimer = setTimeout(() => {
+            btn.classList.remove('copied');
+            if (icon) icon.textContent = 'content_copy';
+            if (label) label.textContent = 'Copiar';
+        }, 1800);
+    };
+
+    try {
+        if (!navigator.clipboard || !window.ClipboardItem) {
+            throw new Error('Clipboard API indisponível neste navegador.');
+        }
+        const finalCanvas = await getClientChartCanvas();
+        const blob = await new Promise(resolve => finalCanvas.toBlob(resolve, 'image/png'));
+        if (!blob) throw new Error('Falha ao gerar a imagem.');
+
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        marcarSucesso();
+    } catch (err) {
+        alert('Não foi possível copiar a imagem. Tente usar Chrome ou Edge atualizados, em uma conexão https.');
+    }
+}
+
+// Salva a mesma imagem (Período · Acumulado · indicadores · gráfico) como um
+// arquivo .png no computador do usuário.
+async function saveChartAsPng() {
+    const btn = document.getElementById('btnSaveChart');
+    const icon = document.getElementById('saveChartIcon');
+    const label = document.getElementById('saveChartLabel');
+    if (!btn) return;
+
+    const marcarSucesso = () => {
+        btn.classList.add('copied');
+        if (icon) icon.textContent = 'check';
+        if (label) label.textContent = 'Salvo!';
+        clearTimeout(btn._saveResetTimer);
+        btn._saveResetTimer = setTimeout(() => {
+            btn.classList.remove('copied');
+            if (icon) icon.textContent = 'download';
+            if (label) label.textContent = 'Salvar';
+        }, 1800);
+    };
+
+    try {
+        const finalCanvas = await getClientChartCanvas();
+        const blob = await new Promise(resolve => finalCanvas.toBlob(resolve, 'image/png'));
+        if (!blob) throw new Error('Falha ao gerar a imagem.');
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const stamp = new Date().toISOString().slice(0, 10);
+        const codigoArquivo = (currentClient || 'cliente').replace(/[^a-zA-Z0-9-_]/g, '_');
+        a.href = url;
+        a.download = `desempenho_${codigoArquivo}_${stamp}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+        marcarSucesso();
+    } catch (err) {
+        alert('Não foi possível salvar a imagem.');
+    }
 }
 
 function renderChart(recs, benchmarksComDados) {
