@@ -1765,12 +1765,13 @@ document.getElementById('btnExportarExcel').addEventListener('click', () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Rentabilidade');
 
-    // ---- Abas extras: clientes acima/abaixo de 100% do CDI ----
+    // ---- Abas extras: clientes acima/abaixo de 100% do CDI, e por faixa de % do CDI ----
     // Respeita o filtro de período ativo na tela: se um ano estiver selecionado,
     // o cálculo do % do CDI considera apenas aquele ano; senão usa o histórico completo.
     const allCodes = [...new Set(rentabilidadeData.map(r => r.cliente))];
     const acimaRows = [];
     const abaixoRows = [];
+    const rangeRows = { 'acima100': [], '90-100': [], '80-90': [], '70-80': [], 'abaixo70': [] };
     allCodes.forEach(code => {
         const stats = clientCdiStats(code, activeCdiPeriodFilter);
         if (!stats || stats.pctCdi === null || isNaN(stats.pctCdi)) return;
@@ -1785,10 +1786,14 @@ document.getElementById('btnExportarExcel').addEventListener('click', () => {
         };
         if (stats.pctCdi > 100) acimaRows.push(row);
         else if (stats.pctCdi < 100) abaixoRows.push(row);
-        // exatamente 100,00% fica de fora das duas abas
+        // exatamente 100,00% fica de fora das duas abas acima/abaixo
+
+        const bucket = cdiRangeBucket(stats.pctCdi);
+        if (bucket) rangeRows[bucket].push(row);
     });
     acimaRows.sort((a, b) => b['% do CDI'] - a['% do CDI']);
     abaixoRows.sort((a, b) => a['% do CDI'] - b['% do CDI']);
+    Object.values(rangeRows).forEach(arr => arr.sort((a, b) => a['% do CDI'] - b['% do CDI']));
 
     const extraCols = [{ wch: 12 }, { wch: 28 }, { wch: 16 }, { wch: 24 }, { wch: 22 }, { wch: 18 }, { wch: 12 }];
     let periodoSuffix = '';
@@ -1807,6 +1812,22 @@ document.getElementById('btnExportarExcel').addEventListener('click', () => {
         wsAbaixo['!cols'] = extraCols;
         XLSX.utils.book_append_sheet(wb, wsAbaixo, `Abaixo 100% CDI${periodoSuffix}`);
     }
+
+    // Abas por faixa (mesmo agrupamento do filtro "Faixa de % do CDI" na tela)
+    const rangeSheetNames = {
+        'acima100': `% CDI > 100${periodoSuffix}`,
+        '90-100': `% CDI 90-100${periodoSuffix}`,
+        '80-90': `% CDI 80-90${periodoSuffix}`,
+        '70-80': `% CDI 70-80${periodoSuffix}`,
+        'abaixo70': `% CDI < 70${periodoSuffix}`
+    };
+    Object.keys(rangeSheetNames).forEach(key => {
+        const arr = rangeRows[key];
+        if (!arr.length) return;
+        const wsFaixa = XLSX.utils.json_to_sheet(arr);
+        wsFaixa['!cols'] = extraCols;
+        XLSX.utils.book_append_sheet(wb, wsFaixa, rangeSheetNames[key]);
+    });
 
     const now = new Date();
     const stamp = now.toISOString().slice(0, 10);
