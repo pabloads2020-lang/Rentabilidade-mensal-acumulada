@@ -560,6 +560,15 @@ table.rent-table td.winner{color:var(--gold2);}
                 <div id="cdiPeriodYearOptions"></div>
             </div>
         </div>
+        <span class="period-filter-label" style="margin-left:4px;">Faixa de % do CDI</span>
+        <div class="bm-segment" id="cdiRangeControls">
+            <div class="bm-seg-item active" data-range="">Todas</div>
+            <div class="bm-seg-item" data-range="acima100">Acima de 100%</div>
+            <div class="bm-seg-item" data-range="90-100">90% – 100%</div>
+            <div class="bm-seg-item" data-range="80-90">80% – 90%</div>
+            <div class="bm-seg-item" data-range="70-80">70% – 80%</div>
+            <div class="bm-seg-item" data-range="abaixo70">Abaixo de 70%</div>
+        </div>
         <button class="btn-clear-base" id="btnBaixarImagemCdi" style="margin-left:4px;">
             <span class="material-symbols-outlined">image</span>
             Baixar imagem
@@ -708,6 +717,7 @@ let pendingRentabilidade = null;   // registros parseados do excel mensal, aguar
 let currentClient = null;
 let currentFilter = '';
 let activeCdiFilter = null;        // null = todos; 'above' = acima de 100% do CDI; 'below' = abaixo de 100% do CDI
+let activeCdiRangeFilter = null;   // null = todas as faixas; senão array de chaves ('acima100','90-100','80-90','70-80','abaixo70')
 let activeCdiPeriodFilter = null;  // null = todo o histórico; senão array de strings "YYYY" (1 ou mais anos) -> restringe o cálculo % do CDI a esses anos
 let activeBenchmarks = new Set();  // quais benchmarks estão marcados no gráfico
 let activeYearFilter = null;       // null = todos os anos; senão array de strings "YYYY" (1 ou mais anos)
@@ -822,6 +832,33 @@ function passesCdiFilter(code) {
 function passesPeriodFilter(code) {
     if (!activeCdiPeriodFilter || !activeCdiPeriodFilter.length) return true;
     return rentabilidadeData.some(r => r.cliente === code && activeCdiPeriodFilter.includes(r.mes.slice(0, 4)));
+}
+
+// Classifica um % do CDI numa das 5 faixas do filtro "Faixa de % do CDI".
+// Diferente do filtro Acima/Abaixo (só 2 categorias opostas), aqui as 5 faixas
+// cobrem o espectro inteiro sem buracos: exatamente 100,00% entra na faixa
+// "90% – 100%" (limite superior inclusivo). Só "Acima de 100%" é estritamente
+// maior que 100.
+function cdiRangeBucket(pct) {
+    if (pct === null || pct === undefined || isNaN(pct)) return null;
+    if (pct > 100) return 'acima100';
+    if (pct >= 90) return '90-100';
+    if (pct >= 80) return '80-90';
+    if (pct >= 70) return '70-80';
+    return 'abaixo70';
+}
+
+// Filtro por faixa de % do CDI (multi-seleção): entra quem cair em QUALQUER uma
+// das faixas marcadas, usando o mesmo período ativo (activeCdiPeriodFilter).
+// Cliente sem % do CDI calculável no período fica de fora quando alguma faixa
+// estiver selecionada (mesma regra do filtro Acima/Abaixo).
+function passesRangeFilter(code) {
+    if (!activeCdiRangeFilter || !activeCdiRangeFilter.length) return true;
+    const stats = clientCdiStats(code, activeCdiPeriodFilter);
+    if (!stats || stats.pctCdi === null || isNaN(stats.pctCdi)) return false;
+    const bucket = cdiRangeBucket(stats.pctCdi);
+    if (!bucket) return false;
+    return activeCdiRangeFilter.includes(bucket);
 }
 
 // ====================== LEITURA DE EXCEL ======================
@@ -1154,6 +1191,21 @@ function renderCdiPeriodFilter() {
     updateCdiPeriodLabel();
 }
 
+// Sincroniza a classe "active" dos pills de "Faixa de % do CDI" com o estado atual
+// (activeCdiRangeFilter). Os cliques em si são vinculados uma única vez no final
+// do arquivo, já que os 6 pills são fixos (não dependem dos dados carregados).
+function renderCdiRangeControls() {
+    const wrap = document.getElementById('cdiRangeControls');
+    if (!wrap) return;
+    wrap.querySelectorAll('.bm-seg-item').forEach(item => {
+        const key = item.dataset.range;
+        const isActive = !key
+            ? !activeCdiRangeFilter
+            : (Array.isArray(activeCdiRangeFilter) && activeCdiRangeFilter.includes(key));
+        item.classList.toggle('active', isActive);
+    });
+}
+
 // Atualiza o texto do botão do dropdown de período com um resumo da seleção atual.
 function updateCdiPeriodLabel() {
     const label = document.getElementById('cdiPeriodBtnLabel');
@@ -1424,6 +1476,7 @@ async function gerarImagemCdiPorAno() {
 
 function renderClientsList() {
     renderCdiPeriodFilter();
+    renderCdiRangeControls();
     renderCdiSummary();
     const grid = document.getElementById('clientsGrid');
     const footer = document.getElementById('clientsFooter');
@@ -1437,6 +1490,7 @@ function renderClientsList() {
             if (!bate) return false;
         }
         if (!passesPeriodFilter(code)) return false;
+        if (!passesRangeFilter(code)) return false;
         return passesCdiFilter(code);
     });
 
@@ -1490,6 +1544,21 @@ document.getElementById('cdiFilterControls').querySelectorAll('.bm-seg-item').fo
         activeCdiFilter = item.dataset.cdi || null;
         document.querySelectorAll('#cdiFilterControls .bm-seg-item').forEach(i => i.classList.remove('active'));
         item.classList.add('active');
+        renderClientsList();
+    });
+});
+// ====================== FILTRO FAIXA DE % DO CDI (multi-seleção) ======================
+document.getElementById('cdiRangeControls').querySelectorAll('.bm-seg-item').forEach(item => {
+    item.addEventListener('click', () => {
+        const key = item.dataset.range;
+        if (!key) {
+            activeCdiRangeFilter = null;
+        } else {
+            let arr = Array.isArray(activeCdiRangeFilter) ? [...activeCdiRangeFilter] : [];
+            if (arr.includes(key)) arr = arr.filter(v => v !== key);
+            else arr.push(key);
+            activeCdiRangeFilter = arr.length ? arr : null;
+        }
         renderClientsList();
     });
 });
