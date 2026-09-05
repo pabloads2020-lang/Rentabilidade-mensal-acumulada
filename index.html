@@ -99,17 +99,21 @@ body.light .hub-topbar {
 .hub-topbar-title { font-size: 14px; font-weight: 600; color: var(--text-topbar); white-space: nowrap; }
 .hub-back-btn, .hub-newtab-btn { display: inline-flex; align-items: center; gap: 5px; background: transparent; border: 1px solid var(--border-topbar); border-radius: 8px; color: var(--text2-topbar); font-family: inherit; font-size: 12px; font-weight: 500; padding: 5px 10px; cursor: pointer; transition: border-color .15s, color .15s, background .15s; white-space: nowrap; }
 .hub-back-btn:hover, .hub-newtab-btn:hover { border-color: var(--amber-topbar); color: var(--gold-topbar); background: var(--bg-topbar); }
-.hub-back-btn .material-symbols-outlined, .hub-newtab-btn .material-symbols-outlined { font-size: 16px; }
 .hub-active-tool { font-size: 15px; font-weight: 700; color: var(--gold-topbar); white-space: nowrap; background: transparent; }
 .hub-clock { font-size: 11px; color: var(--text3-topbar); font-variant-numeric: tabular-nums; background: var(--bg-topbar); padding: 4px 10px; border-radius: 30px; border: 1px solid var(--border-topbar); }
-.hub-theme-btn { background: var(--bg-topbar); border: 1px solid var(--border-topbar); border-radius: 30px; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; transition: border-color 0.2s; flex-shrink: 0; }
+.hub-theme-btn { background: var(--border-topbar); border: 1px solid var(--border-topbar); border-radius: 11px; width: 46px; height: 22px; position: relative; cursor: pointer; transition: background 0.25s, border-color 0.2s; flex-shrink: 0; padding: 0; }
 .hub-theme-btn:hover { border-color: var(--gold-topbar); }
+.hub-theme-btn .hub-theme-knob { position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: var(--text2-topbar); transition: left 0.25s, background 0.25s; }
+body.light .hub-theme-btn { background: rgba(184, 134, 11, 0.3); }
+body.light .hub-theme-btn .hub-theme-knob { left: 26px; background: var(--gold-topbar); }
 .material-symbols-outlined { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal; font-size: 20px; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; word-wrap: normal; direction: ltr; font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 @media (max-width: 600px) {
-    .hub-back-btn span:not(.material-symbols-outlined), .hub-newtab-btn span:not(.material-symbols-outlined) { display: none; }
-    .hub-back-btn, .hub-newtab-btn { padding: 5px 8px; }
+    .hub-back-btn, .hub-newtab-btn { padding: 5px 8px; font-size: 11px; }
     .hub-active-tool { font-size: 13px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
     .hub-clock { font-size: 10px; padding: 4px 6px; }
+    .hub-theme-btn { width: 40px; height: 20px; }
+    .hub-theme-btn .hub-theme-knob { width: 16px; height: 16px; }
+    body.light .hub-theme-btn .hub-theme-knob { left: 22px; }
 }
 @media (max-width: 480px) {
     .hub-topbar-title { display: none; }
@@ -465,7 +469,6 @@ table.rent-table td.winner{color:var(--gold2);}
         <div class="hub-pbf-badge">PBF</div>
         <span class="hub-topbar-title">Hub Financeiro</span>
         <button class="hub-back-btn" id="hubBackBtn">
-            <span class="material-symbols-outlined">arrow_back</span>
             <span>Voltar ao início</span>
         </button>
     </div>
@@ -474,11 +477,12 @@ table.rent-table td.winner{color:var(--gold2);}
     </div>
     <div class="hub-topbar-right">
         <button class="hub-newtab-btn" id="hubNewTabBtn">
-            <span class="material-symbols-outlined">open_in_new</span>
             <span>Nova aba</span>
         </button>
         <span class="hub-clock" id="hubClock"></span>
-        <button class="hub-theme-btn" id="hubThemeBtn">🌙</button>
+        <button class="hub-theme-btn" id="hubThemeBtn" aria-label="Alternar tema claro/escuro" title="Alternar tema claro/escuro">
+            <div class="hub-theme-knob"></div>
+        </button>
     </div>
 </div>
 
@@ -2351,10 +2355,9 @@ document.getElementById('hubNewTabBtn').addEventListener('click', () => {
 // Tema
 const themeBtn = document.getElementById('hubThemeBtn');
 const savedTheme = localStorage.getItem('theme');
-if (savedTheme === 'light') { document.body.classList.add('light'); themeBtn.textContent = '☀️'; }
+if (savedTheme === 'light') { document.body.classList.add('light'); }
 themeBtn.addEventListener('click', () => {
     const isLight = document.body.classList.toggle('light');
-    themeBtn.textContent = isLight ? '☀️' : '🌙';
     localStorage.setItem('theme', isLight ? 'light' : 'dark');
     if (currentClient) selectClient(currentClient);
 });
