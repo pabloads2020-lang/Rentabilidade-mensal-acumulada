@@ -929,50 +929,95 @@ function parseRentabilidadeExcel(file) {
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
                 const cliente = String(row[idx.cliente] ?? '').trim();
-                if (!cliente) continue;
+                if (!cliente || cliente.toLowerCase() === 'cliente') continue;
                 let dataVal = row[idx.data];
-                let d = null;
-                if (dataVal instanceof Date) d = dataVal;
-                else if (typeof dataVal === 'number') {
+                let y = null, m = null, day = null, diaSemana = null;
+                // SheetJS com cellDates:true devolve Date em UTC (meia-noite ou com
+                // fração de hora do Excel). Usar getUTC* evita que o fuso do browser
+                // empurre o dia para o mês anterior/seguinte ou troque o dia da semana
+                // (ex.: 31/08 UTC vira 30/08 21h em UTC-3 e era descartado como sábado).
+                if (dataVal instanceof Date && !isNaN(dataVal)) {
+                    y = dataVal.getUTCFullYear();
+                    m = dataVal.getUTCMonth() + 1;
+                    day = dataVal.getUTCDate();
+                    diaSemana = dataVal.getUTCDay();
+                } else if (typeof dataVal === 'number') {
                     const p = XLSX.SSF.parse_date_code(dataVal);
-                    if (p) d = new Date(p.y, p.m - 1, p.d);
+                    if (p) { y = p.y; m = p.m; day = p.d; diaSemana = new Date(Date.UTC(p.y, p.m - 1, p.d)).getUTCDay(); }
                 } else if (typeof dataVal === 'string' && dataVal.trim()) {
                     const parsed = new Date(dataVal);
-                    if (!isNaN(parsed)) d = parsed;
+                    if (!isNaN(parsed)) {
+                        y = parsed.getUTCFullYear();
+                        m = parsed.getUTCMonth() + 1;
+                        day = parsed.getUTCDate();
+                        diaSemana = parsed.getUTCDay();
+                    }
                 }
-                if (!d || isNaN(d)) continue;
+                if (y === null || m === null || day === null) continue;
 
-                // A base exportada inclui, para cada cliente, uma linha "fantasma" cravada no
-                // último dia corrido do mês (ex.: 31/05/2026, um domingo), sempre com
-                // rentabilidade e benchmarks zerados, além das linhas reais de pregão.
-                // Quando esse dia corrido cai DEPOIS do último dia útil (como em maio/2026),
-                // ele passava a ser escolhido como "o mais recente" no lugar do fechamento
-                // real do mês, fazendo o mês inteiro aparecer zerado. B3 nunca opera aos
-                // sábados/domingos, então essas linhas são sempre artefato de exportação:
-                // descartamos qualquer linha cuja Data caia em fim de semana.
-                const diaSemana = d.getDay(); // 0 = domingo, 6 = sábado
+                // A base exportada inclui linhas "fantasma" no fim do mês (último dia
+                // corrido), com rentabilidade e benchmarks zerados. Podem cair em fim
+                // de semana OU em dia útil (ex.: 31/08/2026, segunda). Nesses casos a
+                // linha fantasma vencia o fechamento real e o mês aparecia zerado.
+                // 1) descarta sábado/domingo; 2) marca fantasma (tudo zero) e só usa
+                // se não houver dia útil real no mês; 3) em empate de data, prefere
+                // o valor não-zero.
                 if (diaSemana === 0 || diaSemana === 6) { ignoradosFimDeSemana++; continue; }
 
-                const mes = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+                const mes = y + '-' + String(m).padStart(2, '0');
                 const key = cliente + '|' + mes;
                 const rentRaw = parseFloat(row[idx.rent]);
                 if (isNaN(rentRaw)) continue;
 
-                if (!byKey[key] || d > byKey[key]._d) {
-                    const num = (i, val) => { const n = parseFloat(val); return isNaN(n) ? null : n; };
+                const num = (val) => { const n = parseFloat(val); return isNaN(n) ? null : n; };
+                const cdiVal = idx.cdi !== undefined ? num(row[idx.cdi]) : null;
+                const ipcaVal = idx.ipca !== undefined ? num(row[idx.ipca]) : null;
+                const ibovVal = idx.ibov !== undefined ? num(row[idx.ibov]) : null;
+                const sp500Val = idx.sp500 !== undefined ? num(row[idx.sp500]) : null;
+                const ifixVal = idx.ifix !== undefined ? num(row[idx.ifix]) : null;
+
+                // Fantasma: rent=0 e todos os benchmarks zerados/ausentes (artefato de exportação)
+                const isPhantom = rentRaw === 0
+                    && (cdiVal === null || cdiVal === 0)
+                    && (ipcaVal === null || ipcaVal === 0)
+                    && (ibovVal === null || ibovVal === 0)
+                    && (sp500Val === null || sp500Val === 0)
+                    && (ifixVal === null || ifixVal === 0);
+
+                const dayOrd = y * 10000 + m * 100 + day;
+                const prev = byKey[key];
+
+                // Não deixa fantasma substituir dado real; fantasma só entra se o mês
+                // ainda estiver vazio (cliente inativo no período, tudo zero).
+                if (isPhantom) {
+                    if (!prev) {
+                        byKey[key] = {
+                            _ord: dayOrd, _phantom: true,
+                            cliente, mes,
+                            data: y + '-' + String(m).padStart(2, '0') + '-' + String(day).padStart(2, '0'),
+                            rentabilidade: 0,
+                            cdi: cdiVal, ipca: ipcaVal, ibov: ibovVal, sp500: sp500Val, ifix: ifixVal
+                        };
+                    }
+                    continue;
+                }
+
+                const deveSubstituir = !prev
+                    || prev._phantom
+                    || dayOrd > prev._ord
+                    || (dayOrd === prev._ord && prev.rentabilidade === 0 && rentRaw !== 0);
+
+                if (deveSubstituir) {
                     byKey[key] = {
-                        _d: d,
+                        _ord: dayOrd, _phantom: false,
                         cliente, mes,
-                        data: d.toISOString().slice(0, 10),
+                        data: y + '-' + String(m).padStart(2, '0') + '-' + String(day).padStart(2, '0'),
                         rentabilidade: rentRaw,
-                        cdi: idx.cdi !== undefined ? num(0, row[idx.cdi]) : null,
-                        ipca: idx.ipca !== undefined ? num(0, row[idx.ipca]) : null,
-                        ibov: idx.ibov !== undefined ? num(0, row[idx.ibov]) : null,
-                        sp500: idx.sp500 !== undefined ? num(0, row[idx.sp500]) : null,
-                        ifix: idx.ifix !== undefined ? num(0, row[idx.ifix]) : null
+                        cdi: cdiVal, ipca: ipcaVal, ibov: ibovVal, sp500: sp500Val, ifix: ifixVal
                     };
                 }
             }
+
         });
 
         if (!abasLidas) {
@@ -981,7 +1026,7 @@ function parseRentabilidadeExcel(file) {
             return;
         }
 
-        const records = Object.values(byKey).map(r => { delete r._d; return r; });
+        const records = Object.values(byKey).map(r => { delete r._ord; delete r._phantom; return r; });
         if (!records.length) {
             setStatus('stRentModal', 'err', '✗ Nenhum registro válido encontrado na planilha');
             document.getElementById('modalBaseSalvar').disabled = true;
